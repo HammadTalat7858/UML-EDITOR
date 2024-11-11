@@ -59,4 +59,20 @@ public class DiagramCanvas extends Pane {
         this.creatingRelationship = creatingRelationship;
         selectedClass = null; // Clear any current selection to start fresh
     }
+    public ClassDiagramComponent getClassAtPosition(double x, double y)
+    {
+        // Iterate through the children (which are ClassDiagramComponents) and check if
+        // the click is within the bounds of any class component
+        for (javafx.scene.Node node : this.getChildren()) {
+            if (node instanceof ClassDiagramComponent) {
+                ClassDiagramComponent classComponent = (ClassDiagramComponent) node;
+                // Check if the click is within the bounds of the class component
+                if (x >= classComponent.getLayoutX() && x <= classComponent.getLayoutX() + classComponent.getWidth() &&
+                        y >= classComponent.getLayoutY() && y <= classComponent.getLayoutY() + classComponent.getHeight()) {
+                    return classComponent;  // Return the class component if within bounds
+                }
+            }
+        }
+        return null;  // No class component found at the given position
+    }
 }
