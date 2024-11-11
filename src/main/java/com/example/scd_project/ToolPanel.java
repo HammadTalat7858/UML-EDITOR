@@ -22,7 +22,8 @@ public class ToolPanel {
         // Create the "Relationship" button
         Button relationshipButton = new Button("Create Relationship");
         relationshipButton.setOnAction(event -> {
-            // Add logic here to handle creating relationships manually if needed
+            // Toggle the mode to create relationships
+            diagramCanvas.setCreatingRelationship(true);
         });
 
         toolPanel.getChildren().addAll(classButton, relationshipButton);
