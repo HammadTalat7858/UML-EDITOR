@@ -1,4 +1,4 @@
-module com.example.scd_project {
+module com.example.pscd {
     requires javafx.controls;
     requires javafx.fxml;
 
@@ -6,6 +6,6 @@ module com.example.scd_project {
     requires com.dlsc.formsfx;
     requires org.kordamp.bootstrapfx.core;
 
-    opens com.example.scd_project to javafx.fxml;
-    exports com.example.scd_project;
+    opens com.example.pscd to javafx.fxml;
+    exports com.example.pscd;
 }
