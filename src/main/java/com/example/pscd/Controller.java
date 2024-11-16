@@ -101,10 +101,14 @@ public class Controller {
         // Set an event on the canvas container to create the class diagram when clicked
         canvasContainer.setOnMouseClicked(event -> {
             if (activeButton == classButton) {
+                // Create a new class diagram if the Class button is active
                 createClassDiagram(gc, event.getX(), event.getY());
+            } else {
+                // Handle selection and inline editing of a class diagram
+                handleClassNameEditing(event, gc);
             }
-            selectDiagram(event.getX(), event.getY()); // Check if a diagram is clicked
         });
+
 
         // Set mouse events for dragging
         canvasContainer.setOnMousePressed(this::onMousePressed);
@@ -218,7 +222,6 @@ public class Controller {
         gc.setFill(Color.BLACK);
         gc.setFont(Font.font("Arial", 14));
         gc.fillText("Class1", x + 10, y + 20);
-
         // Draw attributes
         gc.setFont(Font.font("Arial", 12));
         for (int i = 0; i < classDiagram.attributes.size(); i++) {
@@ -230,10 +233,8 @@ public class Controller {
             gc.fillText("+ " + classDiagram.operations.get(i), x + 10, y + 50 + attributeHeight + i * 20);
         }
 
-        // Update connection points dynamically
-        classDiagram.updateHeight(height);
-
         // Draw connection points
+        classDiagram.height = height;
         gc.setFill(Color.RED);
         double[][] connectionPoints = classDiagram.getConnectionPoints();
         double radius = 5.0; // Radius of connection points
@@ -241,8 +242,9 @@ public class Controller {
         for (double[] point : connectionPoints) {
             gc.fillOval(point[0] - radius, point[1] - radius, 2 * radius, 2 * radius);
         }
-    }
 
+
+    }
 
 
     private void selectDiagram(double mouseX, double mouseY) {
@@ -310,6 +312,53 @@ public class Controller {
             gc.setStroke(Color.GRAY);
             gc.setLineWidth(1);
             gc.strokeLine(startX, startY, event.getX(), event.getY());
+        }
+    }
+    private void handleClassNameEditing(MouseEvent event, GraphicsContext gc) {
+        // Check if any existing class diagram is clicked
+        for (Map.Entry<String, ClassDiagram> entry : diagrams.entrySet()) {
+            ClassDiagram classDiagram = entry.getValue();
+            double mouseX = event.getX();
+            double mouseY = event.getY();
+
+            // Check if the click occurred in the name area of the class diagram
+            if (mouseX >= classDiagram.x && mouseX <= classDiagram.x + classDiagramWidth &&
+                    mouseY >= classDiagram.y && mouseY <= classDiagram.y + 30) {
+
+                // Ensure it's a double-click
+                if (event.getClickCount() == 2) {
+                    // Create a TextField at the class name's position
+                    TextField nameField = new TextField(classDiagram.className);
+                    nameField.setLayoutX(classDiagram.x + 10);
+                    nameField.setLayoutY(classDiagram.y + 5);
+                    nameField.setPrefWidth(classDiagramWidth - 20);
+                    nameField.setStyle("-fx-border-color: blue; -fx-background-color: lightblue;");
+
+                    // Add the TextField to the canvas
+                    canvasContainer.getChildren().add(nameField);
+                    nameField.requestFocus();
+
+                    // Update the class name when "Enter" is pressed
+                    nameField.setOnKeyPressed(keyEvent -> {
+                        if (keyEvent.getCode() == KeyCode.ENTER) {
+                            classDiagram.className = nameField.getText();
+                            canvasContainer.getChildren().remove(nameField);
+                            redrawCanvas(gc);
+                        }
+                    });
+
+                    // Update the class name when focus is lost
+                    nameField.focusedProperty().addListener((obs, oldVal, newVal) -> {
+                        if (!newVal) {
+                            classDiagram.className = nameField.getText();
+                            canvasContainer.getChildren().remove(nameField);
+                            redrawCanvas(gc);
+                        }
+                    });
+
+                    return; // Stop checking other diagrams after finding the clicked one
+                }
+            }
         }
     }
 
@@ -446,6 +495,7 @@ public class Controller {
         double height = 50;  // Height of the rectangle
         List<String> attributes = new ArrayList<>();
         List<String> operations = new ArrayList<>();
+        String className = "Class"; // Default class name
 
         ClassDiagram(double x, double y) {
             this.x = x;
@@ -467,10 +517,6 @@ public class Controller {
             for (double[] point : getConnectionPoints()) {
                 gc.fillOval(point[0] - radius, point[1] - radius, 2 * radius, 2 * radius);
             }
-        }
-
-        public void updateHeight(double newHeight) {
-            this.height = newHeight; // Update the height dynamically
         }
         double getHeight() {
             return 50 + 20 * attributes.size() + 20 * operations.size();
