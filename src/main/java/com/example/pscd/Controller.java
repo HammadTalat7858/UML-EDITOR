@@ -4,6 +4,7 @@ import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -29,6 +30,7 @@ public class Controller {
     @FXML
     private VBox toolboxVBox;
 
+    @FXML private Button deleteButton;
     @FXML
     private Button classButton;
     @FXML
@@ -40,9 +42,18 @@ public class Controller {
     @FXML
     private Button compositionButton;
     @FXML
-    private TextField classNameField;
+    private Button InheritanceButton;
+    @FXML
+    private ComboBox<String> attributeAccessModifier;
+
+    @FXML
+    private ComboBox<String> operationAccessModifier;
+
+
     @FXML
     private TextField attributesField;
+    private Object selectedComponent = null; // Tracks the currently selected component
+
     @FXML
     private TextField operationsField;
     @FXML
@@ -93,6 +104,7 @@ public class Controller {
         buttons.add(associationButton);
         buttons.add(aggregationButton);
         buttons.add(compositionButton);
+        buttons.add(InheritanceButton);
 
         for (Button button : buttons) {
             button.setOnAction(event -> handleButtonClick(button, buttons));
@@ -121,6 +133,8 @@ public class Controller {
         // Attach handlers for adding attributes and operations
         addAttributeButton.setOnAction(event -> onAddAttribute(gc));
         addOperationButton.setOnAction(event -> onAddOperation(gc));
+        deleteButton.setOnAction(actionEvent -> deleteSelectedComponent());
+
     }
 
     private void handleZoom(ScrollEvent event) {
@@ -225,12 +239,12 @@ public class Controller {
         // Draw attributes
         gc.setFont(Font.font("Arial", 12));
         for (int i = 0; i < classDiagram.attributes.size(); i++) {
-            gc.fillText("+ " + classDiagram.attributes.get(i), x + 10, y + 40 + i * 20);
+            gc.fillText(classDiagram.attributes.get(i), x + 10, y + 40 + i * 20);
         }
 
         // Draw operations
         for (int i = 0; i < classDiagram.operations.size(); i++) {
-            gc.fillText("+ " + classDiagram.operations.get(i), x + 10, y + 50 + attributeHeight + i * 20);
+            gc.fillText(classDiagram.operations.get(i), x + 10, y + 50 + attributeHeight + i * 20);
         }
 
         // Draw connection points
@@ -260,15 +274,37 @@ public class Controller {
     }
 
     private void onMousePressed(MouseEvent event) {
-        if (activeButton == null) {
-            // Select a diagram for moving
+        GraphicsContext gc = ((Canvas) canvasContainer.getChildren().get(0)).getGraphicsContext2D();
+        if (event.getClickCount() == 2) { // Handle double-click
+            for (LineConnection line : lineConnections) {
+                if (isNearLine(event.getX(), event.getY(), line)) {
+                    showLineTextField(event.getX(), event.getY(), line, gc);
+                    return;
+                }
+            }
+        }
+       else if (activeButton == null) {
+            // Check if a line is selected
+            for (LineConnection line : lineConnections) {
+                if (isNearLine(event.getX(), event.getY(), line)) { // Check proximity to the line
+                    selectedComponent = line; // Select the line
+                    redrawCanvas(gc); // Highlight the selected line
+                    return;
+                }
+            }
+
+            // Select a diagram for moving or deletion
             selectDiagram(event.getX(), event.getY());
             if (selectedDiagramKey != null) {
+                selectedComponent = diagrams.get(selectedDiagramKey); // Select the diagram
                 ClassDiagram diagram = diagrams.get(selectedDiagramKey);
                 offsetX = event.getX() - diagram.x;
                 offsetY = event.getY() - diagram.y;
+            } else {
+                selectedComponent = null; // Deselect if nothing is clicked
+                redrawCanvas(gc); // Clear any highlights
             }
-        } else if (activeButton == associationButton || activeButton == aggregationButton || activeButton == compositionButton) {
+        } else if (activeButton == associationButton || activeButton == aggregationButton || activeButton == compositionButton||activeButton==InheritanceButton) {
             // Start line drawing
             for (ClassDiagram diagram : diagrams.values()) {
                 for (double[] point : diagram.getConnectionPoints()) {
@@ -283,6 +319,35 @@ public class Controller {
             }
         }
     }
+
+    @FXML
+    private void deleteSelectedComponent() {
+        GraphicsContext gc = ((Canvas) canvasContainer.getChildren().get(0)).getGraphicsContext2D();
+
+        if (selectedComponent instanceof ClassDiagram) {
+            // Delete the selected class diagram and its connections
+            ClassDiagram diagram = (ClassDiagram) selectedComponent;
+
+            // Remove the diagram from the map
+            diagrams.values().remove(diagram);
+
+            // Remove all lines connected to this diagram
+            lineConnections.removeIf(line -> line.startDiagram == diagram || line.endDiagram == diagram);
+
+            selectedComponent = null; // Clear selection
+        } else if (selectedComponent instanceof LineConnection) {
+            // Delete the selected line connection
+            LineConnection line = (LineConnection) selectedComponent;
+
+            lineConnections.remove(line); // Remove the line
+            selectedComponent = null; // Clear selection
+        }
+
+        // Redraw canvas to reflect changes
+        gc.clearRect(0, 0, canvasContainer.getWidth(), canvasContainer.getHeight());
+        redrawCanvas(gc);
+    }
+
 
 
     private void onMouseDragged(MouseEvent event) {
@@ -446,6 +511,21 @@ public class Controller {
             }
         });
     }
+    private String getAccessModifierSymbol(String accessModifier) {
+        switch (accessModifier.toLowerCase()) {
+            case "public":
+                return "+";
+            case "private":
+                return "-";
+            case "protected":
+                return "#";
+            case "package-private":
+                return "~";
+            default:
+                return ""; // Default case (no symbol)
+        }
+    }
+
 
     private void onMouseReleased(MouseEvent event) {
         GraphicsContext gc = ((Canvas) canvasContainer.getChildren().get(0)).getGraphicsContext2D();
@@ -508,31 +588,49 @@ public class Controller {
     }
 
 
+
     @FXML
     private void onAddAttribute(GraphicsContext gc) {
         if (selectedDiagramKey != null) {
             ClassDiagram diagram = diagrams.get(selectedDiagramKey);
-            String attribute = attributesField.getText().trim();
-            if (!attribute.isEmpty()) {
-                diagram.attributes.add(attribute);
+            String attributeName = attributesField.getText().trim();
+            String accessModifier = attributeAccessModifier.getValue(); // Get the selected access modifier
+
+            if (!attributeName.isEmpty() && accessModifier != null) {
+                // Determine the prefix based on the access modifier
+                String prefix = getAccessModifierSymbol(accessModifier);
+                diagram.attributes.add(prefix + " " + attributeName); // Add the attribute with the prefix
                 attributesField.clear();
+                attributeAccessModifier.setValue(null); // Reset the ComboBox
                 redrawCanvas(gc);
+            } else {
+                showError("Please enter an attribute name and select an access modifier.");
             }
         }
     }
+
+
 
     @FXML
     private void onAddOperation(GraphicsContext gc) {
         if (selectedDiagramKey != null) {
             ClassDiagram diagram = diagrams.get(selectedDiagramKey);
-            String operation = operationsField.getText().trim();
-            if (!operation.isEmpty()) {
-                diagram.operations.add(operation);
+            String operationName = operationsField.getText().trim();
+            String accessModifier = operationAccessModifier.getValue(); // Get the selected access modifier
+
+            if (!operationName.isEmpty() && accessModifier != null) {
+                // Determine the prefix based on the access modifier
+                String prefix = getAccessModifierSymbol(accessModifier);
+                diagram.operations.add(prefix + " " + operationName); // Add the operation with the prefix
                 operationsField.clear();
+                operationAccessModifier.setValue(null); // Reset the ComboBox
                 redrawCanvas(gc);
+            } else {
+                showError("Please enter an operation name and select an access modifier.");
             }
         }
     }
+
 
     private void redrawCanvas(GraphicsContext gc) {
         Canvas canvas = (Canvas) canvasContainer.getChildren().get(0);
@@ -548,21 +646,169 @@ public class Controller {
         for (LineConnection line : lineConnections) {
             double[] start = line.getStartPoint();
             double[] end = line.getEndPoint();
-            drawLine(gc, start[0], start[1], end[0], end[1], line.lineType);
+
+            if (line.equals(selectedComponent)) {
+                // Highlight the selected line
+                gc.setLineWidth(3); // Thicker line
+                gc.setStroke(Color.ORANGE); // Highlight color
+            } else {
+                // Regular line
+                gc.setLineWidth(2);
+                gc.setStroke(Color.BLACK);
+            }
+
+            // Draw the line
+            gc.strokeLine(start[0], start[1], end[0], end[1]);
+
+            // Optionally redraw diamonds for aggregation/composition
+            if (line.lineType == aggregationButton) {
+                drawDiamond(gc, end[0], end[1], start[0], start[1], false);
+            }
+            else if (line.lineType == InheritanceButton) {
+                drawHollowTriangle(gc, end[0], end[1], start[0], start[1]);
+            }
+            else if (line.lineType == compositionButton) {
+                drawDiamond(gc, end[0], end[1], start[0], start[1], true);
+            }
+            if (line.text != null && !line.text.isEmpty()) {
+                double midX = (start[0] + end[0]) / 2;
+                double midY = (start[1] + end[1]) / 2;
+
+                gc.setFill(Color.BLACK); // Text color
+                gc.setFont(Font.font("Arial", 12));
+                gc.fillText(line.text, midX - line.text.length() * 3, midY - 5); // Adjust position based on text length
+            }
         }
+    }
+    private void drawHollowTriangle(GraphicsContext gc, double endX, double endY, double startX, double startY) {
+        double triangleSize = 20; // Size of the triangle
+
+        // Calculate the angle of the line
+        double angle = Math.atan2(endY - startY, endX - startX);
+
+        // Calculate the three points of the triangle
+        double[] xPoints = new double[3];
+        double[] yPoints = new double[3];
+        xPoints[0] = endX; // Tip of the triangle
+        yPoints[0] = endY;
+        xPoints[1] = endX - triangleSize * Math.cos(angle - Math.PI / 6); // Left base
+        yPoints[1] = endY - triangleSize * Math.sin(angle - Math.PI / 6);
+        xPoints[2] = endX - triangleSize * Math.cos(angle + Math.PI / 6); // Right base
+        yPoints[2] = endY - triangleSize * Math.sin(angle + Math.PI / 6);
+
+        // Draw the triangle
+        gc.setStroke(Color.BLACK);
+        gc.setLineWidth(2);
+        gc.strokePolygon(xPoints, yPoints, 3); // Hollow triangle
+    }
+    private void showLineTextField(double mouseX, double mouseY, LineConnection line, GraphicsContext gc) {
+        // Calculate the midpoint of the line
+        double[] start = line.getStartPoint();
+        double[] end = line.getEndPoint();
+        double midX = (start[0] + end[0]) / 2;
+        double midY = (start[1] + end[1]) / 2;
+
+        // Create the TextField
+        TextField lineTextField = new TextField(line.text == null ? "" : line.text); // Use existing text if present
+        lineTextField.setLayoutX(midX - 50); // Adjust position
+        lineTextField.setLayoutY(midY - 10);
+        lineTextField.setPrefWidth(100);
+        lineTextField.setStyle("-fx-border-color: blue; -fx-background-color: lightyellow;");
+
+        // Add the TextField to the canvas
+        canvasContainer.getChildren().add(lineTextField);
+        lineTextField.requestFocus();
+
+        // Commit changes on Enter
+        lineTextField.setOnKeyPressed(keyEvent -> {
+            if (keyEvent.getCode() == KeyCode.ENTER) {
+                line.text = lineTextField.getText().trim();
+                canvasContainer.getChildren().remove(lineTextField);
+                redrawCanvas(gc); // Redraw the canvas with the updated text
+            }
+        });
+
+        // Remove TextField on focus loss
+        lineTextField.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (!newVal) {
+                line.text = lineTextField.getText().trim();
+                canvasContainer.getChildren().remove(lineTextField);
+                redrawCanvas(gc);
+            }
+        });
     }
 
 
     private void drawLine(GraphicsContext gc, double startX, double startY, double endX, double endY, Button lineType) {
         gc.setLineWidth(2);
-        if (lineType == associationButton) {
-            gc.setStroke(Color.BLACK);
-        } else if (lineType == aggregationButton) {
-            gc.setStroke(Color.DARKBLUE);
-        } else if (lineType == compositionButton) {
-            gc.setStroke(Color.DARKGREEN);
-        }
+        gc.setStroke(Color.BLACK);
+
+        // Draw the main connecting line
         gc.strokeLine(startX, startY, endX, endY);
+
+        if (lineType == aggregationButton) {
+            drawDiamond(gc, endX, endY, startX, startY, false); // Aggregation: Hollow diamond
+        } else if (lineType == compositionButton) {
+            drawDiamond(gc, endX, endY, startX, startY, true); // Composition: Filled diamond
+        }
+    }
+    private boolean isNearLine(double mouseX, double mouseY, LineConnection line) {
+        double[] start = line.getStartPoint();
+        double[] end = line.getEndPoint();
+
+        // Calculate distance of the point (mouseX, mouseY) to the line segment
+        double distance = pointToSegmentDistance(mouseX, mouseY, start[0], start[1], end[0], end[1]);
+        return distance < 10.0; // Threshold for proximity
+    }
+    private double pointToSegmentDistance(double px, double py, double x1, double y1, double x2, double y2) {
+        double lineLengthSquared = Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2);
+
+        if (lineLengthSquared == 0) {
+            // The line segment is a single point
+            return Math.sqrt(Math.pow(px - x1, 2) + Math.pow(py - y1, 2));
+        }
+
+        // Calculate the projection of the point onto the line segment
+        double t = ((px - x1) * (x2 - x1) + (py - y1) * (y2 - y1)) / lineLengthSquared;
+        t = Math.max(0, Math.min(1, t)); // Clamp t to the segment
+
+        // Find the projection point on the line segment
+        double projX = x1 + t * (x2 - x1);
+        double projY = y1 + t * (y2 - y1);
+
+        // Return the distance from the point to the projection
+        return Math.sqrt(Math.pow(px - projX, 2) + Math.pow(py - projY, 2));
+    }
+
+
+    // Helper method to draw the diamond
+    private void drawDiamond(GraphicsContext gc, double endX, double endY, double startX, double startY, boolean filled) {
+        double diamondSize = 20; // Increased size of the diamond
+
+        // Calculate the angle of the line
+        double angle = Math.atan2(endY - startY, endX - startX);
+
+        // Calculate the four points of the diamond
+        double[] xPoints = new double[4];
+        double[] yPoints = new double[4];
+        xPoints[0] = endX; // Tip of the diamond
+        yPoints[0] = endY;
+        xPoints[1] = endX - diamondSize * Math.cos(angle - Math.PI / 4);
+        yPoints[1] = endY - diamondSize * Math.sin(angle - Math.PI / 4);
+        xPoints[2] = endX - 2 * diamondSize * Math.cos(angle); // Bottom point (distance increased for hollow effect)
+        yPoints[2] = endY - 2 * diamondSize * Math.sin(angle);
+        xPoints[3] = endX - diamondSize * Math.cos(angle + Math.PI / 4);
+        yPoints[3] = endY - diamondSize * Math.sin(angle + Math.PI / 4);
+
+        // Draw the diamond
+        if (filled) {
+            gc.setFill(Color.BLACK);
+            gc.fillPolygon(xPoints, yPoints, 4); // Filled diamond for composition
+        } else {
+            gc.setStroke(Color.BLACK);
+            gc.setLineWidth(2); // Increase line thickness for a more distinct hollow diamond
+            gc.strokePolygon(xPoints, yPoints, 4); // Hollow diamond for aggregation
+        }
     }
 
 
@@ -614,6 +860,7 @@ public class Controller {
         int startConnectionIndex; // Index of the connection point in the start diagram
         int endConnectionIndex;   // Index of the connection point in the end diagram
         Button lineType;
+        String text;
 
         LineConnection(ClassDiagram startDiagram, int startConnectionIndex,
                        ClassDiagram endDiagram, int endConnectionIndex, Button lineType) {
@@ -622,6 +869,7 @@ public class Controller {
             this.endDiagram = endDiagram;
             this.endConnectionIndex = endConnectionIndex;
             this.lineType = lineType;
+            text="";
         }
 
         public double[] getStartPoint() {
