@@ -105,7 +105,7 @@ public class Controller {
                 createClassDiagram(gc, event.getX(), event.getY());
             } else {
                 // Handle selection and inline editing of a class diagram
-                handleClassNameEditing(event, gc);
+                handleClassEditing(event, gc);
             }
         });
 
@@ -170,7 +170,7 @@ public class Controller {
         // Apply selected style to the clicked button
         clickedButton.setStyle("-fx-background-color: white; -fx-text-fill: blue; -fx-border-color: gray; -fx-font-weight: bold;");
         activeButton = clickedButton;
-        System.out.println("Active button set to: " + clickedButton.getText());
+
     }
 
     private void deselectAllButtons(List<Button> buttons) {
@@ -221,7 +221,7 @@ public class Controller {
         // Draw class name
         gc.setFill(Color.BLACK);
         gc.setFont(Font.font("Arial", 14));
-        gc.fillText("Class1", x + 10, y + 20);
+        gc.fillText(classDiagram.className, x + 10, y + 20);
         // Draw attributes
         gc.setFont(Font.font("Arial", 12));
         for (int i = 0; i < classDiagram.attributes.size(); i++) {
@@ -267,7 +267,6 @@ public class Controller {
                 ClassDiagram diagram = diagrams.get(selectedDiagramKey);
                 offsetX = event.getX() - diagram.x;
                 offsetY = event.getY() - diagram.y;
-                System.out.println("Selected diagram: " + selectedDiagramKey);
             }
         } else if (activeButton == associationButton || activeButton == aggregationButton || activeButton == compositionButton) {
             // Start line drawing
@@ -314,54 +313,139 @@ public class Controller {
             gc.strokeLine(startX, startY, event.getX(), event.getY());
         }
     }
-    private void handleClassNameEditing(MouseEvent event, GraphicsContext gc) {
-        // Check if any existing class diagram is clicked
+    private void handleClassEditing(MouseEvent event, GraphicsContext gc) {
         for (Map.Entry<String, ClassDiagram> entry : diagrams.entrySet()) {
             ClassDiagram classDiagram = entry.getValue();
             double mouseX = event.getX();
             double mouseY = event.getY();
 
             // Check if the click occurred in the name area of the class diagram
-            if (mouseX >= classDiagram.x && mouseX <= classDiagram.x + classDiagramWidth &&
-                    mouseY >= classDiagram.y && mouseY <= classDiagram.y + 30) {
+            if (mouseX >= classDiagram.x && mouseX <= classDiagram.x + classDiagramWidth) {
+                if (mouseY >= classDiagram.y && mouseY <= classDiagram.y + 30) {
+                    // Double-click to edit class name
+                    if (event.getClickCount() == 2) {
+                        editClassName(classDiagram, gc);
+                    }
+                    return;
+                }
 
-                // Ensure it's a double-click
-                if (event.getClickCount() == 2) {
-                    // Create a TextField at the class name's position
-                    TextField nameField = new TextField(classDiagram.className);
-                    nameField.setLayoutX(classDiagram.x + 10);
-                    nameField.setLayoutY(classDiagram.y + 5);
-                    nameField.setPrefWidth(classDiagramWidth - 20);
-                    nameField.setStyle("-fx-border-color: blue; -fx-background-color: lightblue;");
+                // Check if the click occurred in the attributes area
+                double attributeStartY = classDiagram.y + 30;
+                double attributeEndY = attributeStartY + 20 * classDiagram.attributes.size();
+                if (mouseY >= attributeStartY && mouseY <= attributeEndY) {
+                    if (event.getClickCount() == 2) {
+                        int index = (int) ((mouseY - attributeStartY) / 20);
+                        editAttribute(classDiagram, index, gc);
+                    }
+                    return;
+                }
 
-                    // Add the TextField to the canvas
-                    canvasContainer.getChildren().add(nameField);
-                    nameField.requestFocus();
-
-                    // Update the class name when "Enter" is pressed
-                    nameField.setOnKeyPressed(keyEvent -> {
-                        if (keyEvent.getCode() == KeyCode.ENTER) {
-                            classDiagram.className = nameField.getText();
-                            canvasContainer.getChildren().remove(nameField);
-                            redrawCanvas(gc);
-                        }
-                    });
-
-                    // Update the class name when focus is lost
-                    nameField.focusedProperty().addListener((obs, oldVal, newVal) -> {
-                        if (!newVal) {
-                            classDiagram.className = nameField.getText();
-                            canvasContainer.getChildren().remove(nameField);
-                            redrawCanvas(gc);
-                        }
-                    });
-
-                    return; // Stop checking other diagrams after finding the clicked one
+                // Check if the click occurred in the operations area
+                double operationStartY = attributeEndY + 10;
+                double operationEndY = operationStartY + 20 * classDiagram.operations.size();
+                if (mouseY >= operationStartY && mouseY <= operationEndY) {
+                    if (event.getClickCount() == 2) {
+                        int index = (int) ((mouseY - operationStartY) / 20);
+                        editOperation(classDiagram, index, gc);
+                    }
+                    return;
                 }
             }
         }
     }
 
+    private void editAttribute(ClassDiagram classDiagram, int index, GraphicsContext gc) {
+        double startY = classDiagram.y + 30 + index * 20; // Position of the attribute row
+        String attribute = classDiagram.attributes.get(index);
+
+        // Create the TextField
+        TextField attributeField = new TextField(attribute);
+        attributeField.setLayoutX(classDiagram.x + 12); // Align with attribute text
+        attributeField.setLayoutY(startY - 8); // Adjust Y to match text alignment
+        attributeField.setPrefWidth(classDiagramWidth - 24); // Fit inside the class box
+        attributeField.setStyle("-fx-background-color: lightblue; -fx-border-color: transparent; -fx-font-size: 12px; -fx-text-fill: black;");
+
+        // Add the TextField to the canvas
+        canvasContainer.getChildren().add(attributeField);
+        attributeField.requestFocus();
+
+        // Commit changes on Enter
+        attributeField.setOnKeyPressed(keyEvent -> {
+            if (keyEvent.getCode() == KeyCode.ENTER) {
+                classDiagram.attributes.set(index, attributeField.getText().trim());
+                canvasContainer.getChildren().remove(attributeField);
+                redrawCanvas(gc);
+            }
+        });
+
+        // Commit changes on focus loss
+        attributeField.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (!newVal) {
+                classDiagram.attributes.set(index, attributeField.getText().trim());
+                canvasContainer.getChildren().remove(attributeField);
+                redrawCanvas(gc);
+            }
+        });
+    }
+    private void editOperation(ClassDiagram classDiagram, int index, GraphicsContext gc) {
+        double attributeHeight = 20 * classDiagram.attributes.size();
+        double startY = classDiagram.y + 30 + attributeHeight + 20 + index * 20; // Position of the operation row
+        String operation = classDiagram.operations.get(index);
+
+        // Create the TextField
+        TextField operationField = new TextField(operation);
+        operationField.setLayoutX(classDiagram.x + 12); // Align with operation text
+        operationField.setLayoutY(startY - 8); // Adjust Y to match text alignment
+        operationField.setPrefWidth(classDiagramWidth - 24); // Fit inside the class box
+        operationField.setStyle("-fx-background-color: lightblue; -fx-border-color: transparent; -fx-font-size: 12px; -fx-text-fill: black;");
+
+        // Add the TextField to the canvas
+        canvasContainer.getChildren().add(operationField);
+        operationField.requestFocus();
+
+        // Commit changes on Enter
+        operationField.setOnKeyPressed(keyEvent -> {
+            if (keyEvent.getCode() == KeyCode.ENTER) {
+                classDiagram.operations.set(index, operationField.getText().trim());
+                canvasContainer.getChildren().remove(operationField);
+                redrawCanvas(gc);
+            }
+        });
+
+        // Commit changes on focus loss
+        operationField.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (!newVal) {
+                classDiagram.operations.set(index, operationField.getText().trim());
+                canvasContainer.getChildren().remove(operationField);
+                redrawCanvas(gc);
+            }
+        });
+    }
+    private void editClassName(ClassDiagram classDiagram, GraphicsContext gc) {
+        TextField nameField = new TextField(classDiagram.className);
+        nameField.setLayoutX(classDiagram.x + 10);
+        nameField.setLayoutY(classDiagram.y + 5);
+        nameField.setPrefWidth(classDiagramWidth - 20);
+        nameField.setStyle("-fx-border-color: blue; -fx-background-color: lightblue;");
+        canvasContainer.getChildren().add(nameField);
+        nameField.requestFocus();
+
+        nameField.setOnKeyPressed(keyEvent -> {
+            if (keyEvent.getCode() == KeyCode.ENTER) {
+                classDiagram.className = nameField.getText().trim();
+                canvasContainer.getChildren().remove(nameField);
+                redrawCanvas(gc);
+            }
+        });
+
+        nameField.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (!newVal) {
+                classDiagram.className = nameField.getText().trim();
+                canvasContainer.getChildren().remove(nameField);
+                redrawCanvas(gc);
+            }
+        });
+    }
 
     private void onMouseReleased(MouseEvent event) {
         GraphicsContext gc = ((Canvas) canvasContainer.getChildren().get(0)).getGraphicsContext2D();
