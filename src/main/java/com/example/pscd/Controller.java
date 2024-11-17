@@ -6,6 +6,7 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
+import javafx.scene.image.WritableImage;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
@@ -16,7 +17,12 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.transform.Scale;
+import javafx.stage.FileChooser;
+//import javafx.swing.SwingFXUtils;
 
+import javax.imageio.ImageIO;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -215,11 +221,19 @@ public class Controller {
     private void drawClassDiagram(GraphicsContext gc, ClassDiagram classDiagram) {
         double x = classDiagram.x;
         double y = classDiagram.y;
-        double width = classDiagramWidth;
+
+        // Calculate the required width based on the widest text
+        double maxTextWidth = getMaxTextWidth(gc, classDiagram);
+        double width = Math.max(classDiagramWidth, maxTextWidth + 20); // Add padding
+
         double baseHeight = 50;
         double attributeHeight = 20 * classDiagram.attributes.size();
         double operationHeight = 20 * classDiagram.operations.size();
         double height = baseHeight + attributeHeight + operationHeight;
+
+        // Update the class diagram dimensions
+        classDiagram.width = width;
+        classDiagram.height = height;
 
         // Draw the class rectangle
         gc.setFill(Color.WHITE);
@@ -236,6 +250,7 @@ public class Controller {
         gc.setFill(Color.BLACK);
         gc.setFont(Font.font("Arial", 14));
         gc.fillText(classDiagram.className, x + 10, y + 20);
+
         // Draw attributes
         gc.setFont(Font.font("Arial", 12));
         for (int i = 0; i < classDiagram.attributes.size(); i++) {
@@ -248,7 +263,6 @@ public class Controller {
         }
 
         // Draw connection points
-        classDiagram.height = height;
         gc.setFill(Color.RED);
         double[][] connectionPoints = classDiagram.getConnectionPoints();
         double radius = 5.0; // Radius of connection points
@@ -256,10 +270,31 @@ public class Controller {
         for (double[] point : connectionPoints) {
             gc.fillOval(point[0] - radius, point[1] - radius, 2 * radius, 2 * radius);
         }
-
-
     }
+    private double getMaxTextWidth(GraphicsContext gc, ClassDiagram classDiagram) {
+        Text textHelper = new Text();
+        textHelper.setFont(Font.font("Arial", 12));
 
+        // Calculate the width of the class name
+        textHelper.setText(classDiagram.className);
+        double maxWidth = textHelper.getLayoutBounds().getWidth();
+
+        // Calculate the width of attributes
+        for (String attribute : classDiagram.attributes) {
+            textHelper.setText(attribute);
+            double attributeWidth = textHelper.getLayoutBounds().getWidth();
+            maxWidth = Math.max(maxWidth, attributeWidth);
+        }
+
+        // Calculate the width of operations
+        for (String operation : classDiagram.operations) {
+            textHelper.setText(operation);
+            double operationWidth = textHelper.getLayoutBounds().getWidth();
+            maxWidth = Math.max(maxWidth, operationWidth);
+        }
+
+        return maxWidth;
+    }
 
     private void selectDiagram(double mouseX, double mouseY) {
         for (Map.Entry<String, ClassDiagram> entry : diagrams.entrySet()) {
@@ -586,7 +621,38 @@ public class Controller {
             drawClassDiagram(gc, diagram);
         }
     }
-
+//    @FXML
+//    private void exportAsJPEG() {
+//        saveCanvasToFile("jpeg");
+//    }
+//
+//    @FXML
+//    private void exportAsPNG() {
+//        saveCanvasToFile("png");
+//    }
+//    private void saveCanvasToFile(String format) {
+//        Canvas canvas = (Canvas) canvasContainer.getChildren().get(0);
+//
+//        // Take a snapshot of the canvas
+//        WritableImage writableImage = new WritableImage((int) canvas.getWidth(), (int) canvas.getHeight());
+//        canvas.snapshot(null, writableImage);
+//
+//        // Open a file chooser to save the file
+//        FileChooser fileChooser = new FileChooser();
+//        fileChooser.setTitle("Save Diagram as " + format.toUpperCase());
+//        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(format.toUpperCase() + " Files", "*." + format));
+//        File file = fileChooser.showSaveDialog(canvasContainer.getScene().getWindow());
+//
+//        if (file != null) {
+//            try {
+//
+//                ImageIO.write(SwingFXUtils.fromFXImage(writableImage, null), format, file);
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//                showError("Error saving file: " + e.getMessage());
+//            }
+//        }
+//    }
 
 
     @FXML
@@ -601,7 +667,6 @@ public class Controller {
                 String prefix = getAccessModifierSymbol(accessModifier);
                 diagram.attributes.add(prefix + " " + attributeName); // Add the attribute with the prefix
                 attributesField.clear();
-                attributeAccessModifier.setValue(null); // Reset the ComboBox
                 redrawCanvas(gc);
             } else {
                 showError("Please enter an attribute name and select an access modifier.");
@@ -623,7 +688,7 @@ public class Controller {
                 String prefix = getAccessModifierSymbol(accessModifier);
                 diagram.operations.add(prefix + " " + operationName); // Add the operation with the prefix
                 operationsField.clear();
-                operationAccessModifier.setValue(null); // Reset the ComboBox
+
                 redrawCanvas(gc);
             } else {
                 showError("Please enter an operation name and select an access modifier.");
