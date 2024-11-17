@@ -302,44 +302,59 @@ public class Controller {
             if (mouseX >= diagram.x && mouseX <= diagram.x + diagram.width &&
                     mouseY >= diagram.y && mouseY <= diagram.y + diagram.getHeight()) {
                 selectedDiagramKey = entry.getKey();
+                selectedComponent = diagram;
                 return;
             }
         }
-        selectedDiagramKey = null; // No diagram selected
+        selectedDiagramKey = null;
+        selectedComponent = null;// No diagram selected
     }
 
     private void onMousePressed(MouseEvent event) {
         GraphicsContext gc = ((Canvas) canvasContainer.getChildren().get(0)).getGraphicsContext2D();
-        if (event.getClickCount() == 2) { // Handle double-click
+
+        // Handle double-click for editing line text
+        if (event.getClickCount() == 2) {
             for (LineConnection line : lineConnections) {
                 if (isNearLine(event.getX(), event.getY(), line)) {
                     showLineTextField(event.getX(), event.getY(), line, gc);
                     return;
                 }
             }
-        }
-       else if (activeButton == null) {
+        } else if (activeButton == null) {
+            // Handle selection
+            boolean componentSelected = false;
+
             // Check if a line is selected
             for (LineConnection line : lineConnections) {
-                if (isNearLine(event.getX(), event.getY(), line)) { // Check proximity to the line
-                    selectedComponent = line; // Select the line
-                    redrawCanvas(gc); // Highlight the selected line
-                    return;
+                if (isNearLine(event.getX(), event.getY(), line)) {
+                    selectedComponent = line;
+                    componentSelected = true;
+                    break;
                 }
             }
 
-            // Select a diagram for moving or deletion
-            selectDiagram(event.getX(), event.getY());
-            if (selectedDiagramKey != null) {
-                selectedComponent = diagrams.get(selectedDiagramKey); // Select the diagram
-                ClassDiagram diagram = diagrams.get(selectedDiagramKey);
-                offsetX = event.getX() - diagram.x;
-                offsetY = event.getY() - diagram.y;
-            } else {
-                selectedComponent = null; // Deselect if nothing is clicked
-                redrawCanvas(gc); // Clear any highlights
+            // Check if a class diagram is selected
+            if (!componentSelected) {
+                selectDiagram(event.getX(), event.getY());
+                if (selectedDiagramKey != null) {
+                    selectedComponent = diagrams.get(selectedDiagramKey);
+                    ClassDiagram diagram = diagrams.get(selectedDiagramKey);
+                    offsetX = event.getX() - diagram.x;
+                    offsetY = event.getY() - diagram.y;
+                    componentSelected = true;
+                }
             }
-        } else if (activeButton == associationButton || activeButton == aggregationButton || activeButton == compositionButton||activeButton==InheritanceButton) {
+
+            // If no component is selected, deselect
+            if (!componentSelected) {
+                selectedComponent = null;
+            }
+
+            // Redraw to reflect selection
+            redrawCanvas(gc);
+        } else if (activeButton == associationButton || activeButton == aggregationButton ||
+                activeButton == compositionButton || activeButton == InheritanceButton) {
             // Start line drawing
             for (ClassDiagram diagram : diagrams.values()) {
                 for (double[] point : diagram.getConnectionPoints()) {
@@ -354,6 +369,7 @@ public class Controller {
             }
         }
     }
+
 
     @FXML
     private void deleteSelectedComponent() {
