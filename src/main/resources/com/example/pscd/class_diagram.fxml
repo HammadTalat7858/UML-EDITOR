@@ -16,7 +16,7 @@
 
 <AnchorPane prefHeight="658.0" prefWidth="934.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.pscd.Controller">
     <children>
-        <BorderPane layoutX="1.0" layoutY="102.0" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="1280.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <BorderPane layoutX="0.0" layoutY="0.0" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="1280.0" style="-fx-border-color: transparent transparent white transparent; -fx-border-width: 0 4 0 4;" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
             <top>
                 <MenuBar BorderPane.alignment="CENTER">
                     <menus>
@@ -28,7 +28,8 @@
                                         <MenuItem fx:id="pngMenuItem" mnemonicParsing="false" onAction="#exportAsPNG" text="PNG" />
                                     </items>
                                 </Menu>
-                                <MenuItem mnemonicParsing="false" text="Save As..." />
+                                <MenuItem fx:id="SaveAs" mnemonicParsing="false" onAction="#saveDiagramToFile" text="Save As..." />
+                                <MenuItem fx:id="Load" mnemonicParsing="false" onAction="#loadDiagramFromFile" text="Load" />
                                 <MenuItem mnemonicParsing="false" text="Close" />
                             </items>
                         </Menu>
@@ -46,7 +47,7 @@
                             <items>
                                 <Menu mnemonicParsing="false" text="Generate Code">
                                     <items>
-                                        <MenuItem mnemonicParsing="false" text="JAVA" />
+                                        <MenuItem fx:id="GenerateCode" mnemonicParsing="false" onAction="#exportToJavaCode" text="JAVA" />
                                     </items>
                                 </Menu>
                             </items>
@@ -60,57 +61,59 @@
                 </MenuBar>
             </top>
             <left>
-                <!-- Toolbox VBox integration -->
-                <VBox fx:id="toolboxVBox" prefHeight="774.0" prefWidth="186.0" spacing="10.0" style="-fx-background-color: #2E2E2E;" BorderPane.alignment="CENTER">
-                    <Label style="-fx-font-size: 16; -fx-text-fill: white;" text="TOOLBOX" />
-                    <Label style="-fx-font-size: 14; -fx-text-fill: lightgray;" text="Classes (Basic)" />
-                    <Button fx:id="classButton" text="Class" />
-                    <Button fx:id="interfaceButton" text="Interface" />
-                    <Button fx:id="associationButton" text="Association" />
-                    <Button fx:id="aggregationButton" text="Aggregation" />
-                    <Button fx:id="compositionButton" text="Composition" />
-                    <Button fx:id="InheritanceButton" text="Inheritance" />
+                <VBox fx:id="toolboxVBox" alignment="CENTER" prefHeight="700.0" prefWidth="200.0" spacing="20.0" style="-fx-background-color: #000000; -fx-border-color: white; -fx-border-width: 0 4 0 0; -fx-padding: 15;" BorderPane.alignment="CENTER">
+                    <Label style="-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: white;" text="TOOLBOX" />
+                    <Label style="-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: lightgray;" text="Classes (Basic)" />
+                    <Button fx:id="classButton" style="-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;" text="Class" />
+                    <Button fx:id="interfaceButton" style="-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;" text="Interface" />
+                    <Button fx:id="associationButton" style="-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;" text="Association" />
+                    <Button fx:id="aggregationButton" style="-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;" text="Aggregation" />
+                    <Button fx:id="compositionButton" style="-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;" text="Composition" />
+                    <Button fx:id="InheritanceButton" style="-fx-background-color: #6A5ACD; -fx-text-fill: white; -fx-font-weight: bold;" text="Inheritance" />
                 </VBox>
             </left>
             <right>
-                <!-- Properties VBox integration -->
-                <VBox fx:id="propertiesVBox" nodeOrientation="LEFT_TO_RIGHT" prefHeight="800.0" prefWidth="208.0" spacing="10.0" style="-fx-background-color: #2E2E2E;" BorderPane.alignment="CENTER">
-                    <Label style="-fx-font-size: 16; -fx-text-fill: white;" text="PROPERTIES" />
+                <VBox fx:id="propertiesVBox" alignment="CENTER" prefHeight="700.0" prefWidth="200.0" spacing="20.0" style="-fx-background-color: #000000; -fx-border-color: white; -fx-border-width: 0 0 0 4; -fx-padding: 15;" BorderPane.alignment="CENTER">
+                    <Label style="-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: white;" text="PROPERTIES" />
 
                     <!-- Attributes Section -->
-                    <Label style="-fx-font-size: 14; -fx-text-fill: lightgray;" text="Attributes" />
-                    <TextField fx:id="attributesField" promptText="Add Attribute" style="-fx-background-color: white;" />
-                    <ComboBox fx:id="attributeAccessModifier" promptText="Access Modifier" style="-fx-background-color: white;">
-                        <items>
-                            <FXCollections fx:factory="observableArrayList">
-                                <String fx:value="public" />
-                                <String fx:value="private" />
-                                <String fx:value="protected" />
-                            </FXCollections>
-                        </items>
-                    </ComboBox>
-                    <Button fx:id="addAttributeButton" style="-fx-background-color: white;" text="Add Attribute" />
+                    <VBox alignment="CENTER" spacing="10.0" style="-fx-background-color: #2C3E50; -fx-padding: 15; -fx-border-color: white; -fx-border-width: 2;">
+                        <Label style="-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: lightgray;" text="Attributes" />
+                        <TextField fx:id="attributesField" promptText="Add Attribute" style="-fx-background-color: white; -fx-border-color: gray;" />
+                        <ComboBox fx:id="attributeAccessModifier" promptText="Access Modifier" style="-fx-background-color: white;">
+                            <items>
+                                <FXCollections fx:factory="observableArrayList">
+                                    <String fx:value="public" />
+                                    <String fx:value="private" />
+                                    <String fx:value="protected" />
+                                </FXCollections>
+                            </items>
+                        </ComboBox>
+                        <Button fx:id="addAttributeButton" style="-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;" text="Add Attribute" />
+                    </VBox>
 
                     <!-- Operations Section -->
-                    <Label style="-fx-font-size: 14; -fx-text-fill: lightgray;" text="Operations" />
-                    <TextField fx:id="operationsField" promptText="Add Operation" style="-fx-background-color: white;" />
-                    <ComboBox fx:id="operationAccessModifier" promptText="Access Modifier" style="-fx-background-color: white;">
-                        <items>
-                            <FXCollections fx:factory="observableArrayList">
-                                <String fx:value="public" />
-                                <String fx:value="private" />
-                                <String fx:value="protected" />
-                            </FXCollections>
-                        </items>
-                    </ComboBox>
-                    <Button fx:id="addOperationButton" style="-fx-background-color: white;" text="Add Operation" />
+                    <VBox alignment="CENTER" spacing="10.0" style="-fx-background-color: #2C3E50; -fx-padding: 15; -fx-border-color: white; -fx-border-width: 2;">
+                        <Label style="-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: lightgray;" text="Operations" />
+                        <TextField fx:id="operationsField" promptText="Add Operation" style="-fx-background-color: white; -fx-border-color: gray;" />
+                        <ComboBox fx:id="operationAccessModifier" promptText="Access Modifier" style="-fx-background-color: white;">
+                            <items>
+                                <FXCollections fx:factory="observableArrayList">
+                                    <String fx:value="public" />
+                                    <String fx:value="private" />
+                                    <String fx:value="protected" />
+                                </FXCollections>
+                            </items>
+                        </ComboBox>
+                        <Button fx:id="addOperationButton" style="-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;" text="Add Operation" />
+                    </VBox>
 
                     <!-- Generic Delete Button -->
-                    <Button fx:id="deleteButton" style="-fx-background-color: red; -fx-text-fill: white; -fx-font-size: 14;" text="Delete Selected" />
+                    <Button fx:id="deleteButton" style="-fx-background-color: #8B008B; -fx-text-fill: white; -fx-font-size: 14; -fx-font-weight: bold;" text="Delete Selected" />
                 </VBox>
             </right>
             <center>
-                <Pane fx:id="canvasContainer" prefHeight="633.0" prefWidth="679.0" BorderPane.alignment="CENTER" />
+                <Pane fx:id="canvasContainer" prefHeight="633.0" prefWidth="679.0" style="-fx-border-color: lightgray; -fx-border-width: 2;" BorderPane.alignment="CENTER" />
             </center>
         </BorderPane>
     </children>
