@@ -3,9 +3,11 @@ package com.example.pscd;
 import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.*;
 import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
+import javafx.scene.image.PixelReader;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -18,15 +20,16 @@ import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.transform.Scale;
 import javafx.stage.FileChooser;
-//import javafx.swing.SwingFXUtils;
-
+import javax.swing.SwingUtilities;
 import javax.imageio.ImageIO;
-import java.io.File;
-import java.io.IOException;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.swing.*;
 
 public class Controller {
 
@@ -36,7 +39,7 @@ public class Controller {
     @FXML
     private VBox toolboxVBox;
 
-    @FXML private Button deleteButton;
+    @FXML   private Button deleteButton;
     @FXML
     private Button classButton;
     @FXML
@@ -54,6 +57,18 @@ public class Controller {
 
     @FXML
     private ComboBox<String> operationAccessModifier;
+    @FXML
+    private MenuItem jpegMenuItem;
+
+    @FXML
+    private MenuItem pngMenuItem;
+
+    @FXML
+    private MenuItem SaveAs;
+
+    @FXML
+    private MenuItem Load;
+
 
 
     @FXML
@@ -140,6 +155,7 @@ public class Controller {
         addAttributeButton.setOnAction(event -> onAddAttribute(gc));
         addOperationButton.setOnAction(event -> onAddOperation(gc));
         deleteButton.setOnAction(actionEvent -> deleteSelectedComponent());
+
 
     }
 
@@ -623,6 +639,62 @@ public class Controller {
         }
         return -1; // Should not happen for a valid start point
     }
+    @FXML
+    private void loadDiagramFromFile() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Load Diagram");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Diagram Files", "*.diagram"));
+        File file = fileChooser.showOpenDialog(canvasContainer.getScene().getWindow());
+
+        if (file != null) {
+            try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
+                // Read diagrams and connections from file
+                diagrams = (HashMap<String, ClassDiagram>) ois.readObject();
+                lineConnections = (ArrayList<LineConnection>) ois.readObject();
+
+                // Reinitialize  fields or objects as needed
+                initializeConnections();
+
+                // Redraw the canvas with the loaded data
+                GraphicsContext gc = ((Canvas) canvasContainer.getChildren().get(0)).getGraphicsContext2D();
+                gc.clearRect(0, 0, canvasContainer.getWidth(), canvasContainer.getHeight());
+                redrawCanvas(gc);
+
+                showInfo("Diagram loaded successfully from " + file.getName());
+            } catch (IOException | ClassNotFoundException e) {
+                e.printStackTrace();
+                showError("Error loading diagram: " + e.getMessage());
+            }
+        }
+    }
+
+
+    @FXML
+    private void saveDiagramToFile() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Save Diagram");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Diagram Files", "*.diagram"));
+        File file = fileChooser.showSaveDialog(canvasContainer.getScene().getWindow());
+
+        if (file != null) {
+            try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
+                // Write diagrams and connections to file
+                oos.writeObject(new HashMap<>(diagrams));
+                oos.writeObject(new ArrayList<>(lineConnections));
+                showInfo("Diagram saved successfully to " + file.getName());
+            } catch (IOException e) {
+                e.printStackTrace();
+                showError("Error saving diagram: " + e.getMessage());
+            }
+        }
+    }
+    private void showInfo(String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Information");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
 
     private void showError(String message) {
         javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR);
@@ -637,38 +709,84 @@ public class Controller {
             drawClassDiagram(gc, diagram);
         }
     }
-//    @FXML
-//    private void exportAsJPEG() {
-//        saveCanvasToFile("jpeg");
-//    }
-//
-//    @FXML
-//    private void exportAsPNG() {
-//        saveCanvasToFile("png");
-//    }
-//    private void saveCanvasToFile(String format) {
-//        Canvas canvas = (Canvas) canvasContainer.getChildren().get(0);
-//
-//        // Take a snapshot of the canvas
-//        WritableImage writableImage = new WritableImage((int) canvas.getWidth(), (int) canvas.getHeight());
-//        canvas.snapshot(null, writableImage);
-//
-//        // Open a file chooser to save the file
-//        FileChooser fileChooser = new FileChooser();
-//        fileChooser.setTitle("Save Diagram as " + format.toUpperCase());
-//        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(format.toUpperCase() + " Files", "*." + format));
-//        File file = fileChooser.showSaveDialog(canvasContainer.getScene().getWindow());
-//
-//        if (file != null) {
-//            try {
-//
-//                ImageIO.write(SwingFXUtils.fromFXImage(writableImage, null), format, file);
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//                showError("Error saving file: " + e.getMessage());
-//            }
-//        }
-//    }
+    @FXML
+    private void exportAsJPEG() {
+        saveCanvasToFile("jpeg");
+    }
+
+    @FXML
+    private void exportAsPNG() {
+        saveCanvasToFile("png");
+    }
+
+    private void saveCanvasToFile(String format) {
+        Canvas canvas = (Canvas) canvasContainer.getChildren().get(0);
+
+        // Take a snapshot of the canvas
+        WritableImage writableImage = new WritableImage((int) canvas.getWidth(), (int) canvas.getHeight());
+        canvas.snapshot(null, writableImage);
+
+        // Open a file chooser to save the file
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Save Diagram as " + format.toUpperCase());
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(format.toUpperCase() + " Files", "*." + format));
+        File file = fileChooser.showSaveDialog(canvasContainer.getScene().getWindow());
+
+        if (file != null) {
+            System.out.println("Saving to file: " + file.getAbsolutePath());
+            try {
+                // Convert WritableImage to BufferedImage
+                BufferedImage bufferedImage = convertToBufferedImage(writableImage);
+
+                // Handle JPEG alpha channel issue
+                if ("jpeg".equalsIgnoreCase(format)) {
+                    bufferedImage = removeAlphaChannel(bufferedImage);
+                }
+
+                // Save the image to the file
+                boolean result = ImageIO.write(bufferedImage, format, file);
+                if (!result) {
+                    System.err.println("ImageIO.write() failed for format: " + format);
+                } else {
+                    System.out.println("Image successfully saved to: " + file.getAbsolutePath());
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+                showError("Error saving file: " + e.getMessage());
+            }
+        } else {
+            System.err.println("File selection cancelled.");
+        }
+    }
+
+
+    private BufferedImage convertToBufferedImage(WritableImage writableImage) {
+        int width = (int) writableImage.getWidth();
+        int height = (int) writableImage.getHeight();
+
+        BufferedImage bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+
+        PixelReader pixelReader = writableImage.getPixelReader();
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int argb = pixelReader.getArgb(x, y);
+                bufferedImage.setRGB(x, y, argb);
+            }
+        }
+
+        return bufferedImage;
+    }
+    private BufferedImage removeAlphaChannel(BufferedImage originalImage) {
+        BufferedImage rgbImage = new BufferedImage(
+                originalImage.getWidth(),
+                originalImage.getHeight(),
+                BufferedImage.TYPE_INT_RGB);
+
+        Graphics2D graphics = rgbImage.createGraphics();
+        graphics.drawImage(originalImage, 0, 0, java.awt.Color.WHITE, null); // Use white as the background color
+        graphics.dispose();
+        return rgbImage;
+    }
 
 
     @FXML
@@ -820,19 +938,7 @@ public class Controller {
     }
 
 
-    private void drawLine(GraphicsContext gc, double startX, double startY, double endX, double endY, Button lineType) {
-        gc.setLineWidth(2);
-        gc.setStroke(Color.BLACK);
 
-        // Draw the main connecting line
-        gc.strokeLine(startX, startY, endX, endY);
-
-        if (lineType == aggregationButton) {
-            drawDiamond(gc, endX, endY, startX, startY, false); // Aggregation: Hollow diamond
-        } else if (lineType == compositionButton) {
-            drawDiamond(gc, endX, endY, startX, startY, true); // Composition: Filled diamond
-        }
-    }
     private boolean isNearLine(double mouseX, double mouseY, LineConnection line) {
         double[] start = line.getStartPoint();
         double[] end = line.getEndPoint();
@@ -897,16 +1003,24 @@ public class Controller {
         double tolerance = 10.0; // Snap radius
         return Math.abs(x1 - x2) < tolerance && Math.abs(y1 - y2) < tolerance;
     }
+    private void initializeConnections() {
+        for (LineConnection line : lineConnections) {
+            line.initializeButton(aggregationButton, compositionButton, associationButton, InheritanceButton);
+        }
+    }
 
 
 
-    private static class ClassDiagram {
+
+
+    private static class ClassDiagram implements Serializable {
         double x, y;
         double width = 120;  // Width of the rectangle
         double height = 50;  // Height of the rectangle
         List<String> attributes = new ArrayList<>();
         List<String> operations = new ArrayList<>();
         String className = "Class"; // Default class name
+        private static final long serialVersionUID = 1L;
 
         ClassDiagram(double x, double y) {
             this.x = x;
@@ -935,13 +1049,15 @@ public class Controller {
 
     }
 
-    private static class LineConnection {
+    private static class LineConnection implements Serializable {
         ClassDiagram startDiagram;
         ClassDiagram endDiagram;
-        int startConnectionIndex; // Index of the connection point in the start diagram
-        int endConnectionIndex;   // Index of the connection point in the end diagram
-        Button lineType;
+        int startConnectionIndex;
+        int endConnectionIndex;
+        transient Button lineType; // Mark Button as
+        String lineTypeText;       // Store the button's text or purpose for reinitialization
         String text;
+        private static final long serialVersionUID = 1L;
 
         LineConnection(ClassDiagram startDiagram, int startConnectionIndex,
                        ClassDiagram endDiagram, int endConnectionIndex, Button lineType) {
@@ -950,7 +1066,8 @@ public class Controller {
             this.endDiagram = endDiagram;
             this.endConnectionIndex = endConnectionIndex;
             this.lineType = lineType;
-            text="";
+            this.lineTypeText = lineType.getText(); // Save button text or identifier
+            text = "";
         }
 
         public double[] getStartPoint() {
@@ -960,6 +1077,22 @@ public class Controller {
         public double[] getEndPoint() {
             return endDiagram.getConnectionPoints()[endConnectionIndex];
         }
+
+        private void initializeButton(Button aggregationButton, Button compositionButton,
+                                      Button associationButton, Button inheritanceButton) {
+            if (lineType == null && lineTypeText != null) {
+                if ("Aggregation".equals(lineTypeText)) {
+                    this.lineType = aggregationButton;
+                } else if ("Composition".equals(lineTypeText)) {
+                    this.lineType = compositionButton;
+                } else if ("Association".equals(lineTypeText)) {
+                    this.lineType = associationButton;
+                } else if ("Inheritance".equals(lineTypeText)) {
+                    this.lineType = inheritanceButton;
+                }
+            }
+        }
+
     }
 
 
