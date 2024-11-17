@@ -19,6 +19,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.transform.Scale;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javax.swing.SwingUtilities;
 import javax.imageio.ImageIO;
@@ -62,6 +63,8 @@ public class Controller {
 
     @FXML
     private MenuItem pngMenuItem;
+    @FXML
+    private MenuItem GenerateCode;
 
     @FXML
     private MenuItem SaveAs;
@@ -1008,6 +1011,96 @@ public class Controller {
             line.initializeButton(aggregationButton, compositionButton, associationButton, InheritanceButton);
         }
     }
+    @FXML private void exportToJavaCode() {
+        DirectoryChooser directoryChooser = new DirectoryChooser();
+        directoryChooser.setTitle("Select Output Folder");
+        File folder = directoryChooser.showDialog(canvasContainer.getScene().getWindow());
+
+        if (folder != null && folder.isDirectory()) {
+            for (ClassDiagram diagram : diagrams.values()) {
+                String classCode = generateClassCode(diagram);
+                File javaFile = new File(folder, diagram.className + ".java");
+
+                try (PrintWriter writer = new PrintWriter(javaFile)) {
+                    writer.write(classCode);
+                    showInfo("Class " + diagram.className + " exported to " + javaFile.getAbsolutePath());
+                } catch (IOException e) {
+                    showError("Error exporting class " + diagram.className + ": " + e.getMessage());
+                }
+            }
+        }
+    }
+    private String parseAccessModifier(String declaration) {
+        String trimmed = declaration.trim();
+        String accessModifier = "";
+
+        // Check for symbols at the start of the declaration
+        if (trimmed.startsWith("+")) {
+            accessModifier = "public";
+            trimmed = trimmed.substring(1).trim();
+        } else if (trimmed.startsWith("-")) {
+            accessModifier = "private";
+            trimmed = trimmed.substring(1).trim();
+        } else if (trimmed.startsWith("#")) {
+            accessModifier = "protected";
+            trimmed = trimmed.substring(1).trim();
+        } else if (trimmed.startsWith("~")) {
+            accessModifier = ""; // Default package-private in Java
+            trimmed = trimmed.substring(1).trim();
+        } else {
+            accessModifier = "public"; // Default to public if no symbol
+        }
+
+        return accessModifier + " " + trimmed;
+    }
+    private String generateClassCode(ClassDiagram classDiagram) {
+        StringBuilder code = new StringBuilder();
+
+        // Find relationships
+        List<String> inheritance = new ArrayList<>();
+        List<String> associations = new ArrayList<>();
+
+        for (LineConnection connection : lineConnections) {
+            if (connection.startDiagram == classDiagram) {
+                if (connection.lineType == InheritanceButton) {
+                    inheritance.add(connection.endDiagram.className);
+                } else if (connection.lineType == associationButton || connection.lineType == aggregationButton ||
+                        connection.lineType == compositionButton) {
+                    associations.add(connection.endDiagram.className);
+                }
+            }
+        }
+
+        // Class Declaration with Inheritance
+        code.append("public class ").append(classDiagram.className);
+        if (!inheritance.isEmpty()) {
+            code.append(" extends ").append(inheritance.get(0)); // Handle only one parent class
+        }
+        code.append(" {\n\n");
+
+        // Association Fields
+        for (String associatedClass : associations) {
+            code.append("    private ").append(associatedClass).append(" ").append(Character.toLowerCase(associatedClass.charAt(0)))
+                    .append(associatedClass.substring(1)).append(";\n");
+        }
+
+        // Attributes
+        for (String attribute : classDiagram.attributes) {
+            code.append("    ").append(parseAccessModifier(attribute)).append(";\n");
+        }
+        code.append("\n");
+
+        // Operations
+        for (String operation : classDiagram.operations) {
+            code.append("    ").append(parseAccessModifier(operation)).append(" {\n");
+            code.append("        // TODO: Implement this method\n");
+            code.append("    }\n\n");
+        }
+
+        code.append("}\n");
+        return code.toString();
+    }
+
 
 
 
@@ -1092,6 +1185,7 @@ public class Controller {
                 }
             }
         }
+
 
     }
 
