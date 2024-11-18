@@ -69,7 +69,7 @@
                     <Button fx:id="associationButton" style="-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;" text="Association" />
                     <Button fx:id="aggregationButton" style="-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;" text="Aggregation" />
                     <Button fx:id="compositionButton" style="-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;" text="Composition" />
-                    <Button fx:id="InheritanceButton" style="-fx-background-color: #6A5ACD; -fx-text-fill: white; -fx-font-weight: bold;" text="Inheritance" />
+                    <Button fx:id="InheritanceButton" style="-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;" text="Inheritance" />
                 </VBox>
             </left>
             <right>
