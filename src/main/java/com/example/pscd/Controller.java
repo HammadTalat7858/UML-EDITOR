@@ -72,6 +72,9 @@ public class Controller {
     @FXML
     private MenuItem Load;
 
+    @FXML
+    private VBox propertiesPanel;
+
 
 
     @FXML
@@ -124,6 +127,8 @@ public class Controller {
             drawGrid(gc);  // Redraw the grid with the new width
             redrawCanvas(gc);  // Redraw class diagrams and connections
         });
+
+
 
         canvasContainer.heightProperty().addListener((observable, oldValue, newValue) -> {
             gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
@@ -220,7 +225,7 @@ public class Controller {
         }
 
         // Apply selected style to the clicked button
-        clickedButton.setStyle("-fx-background-color: #5DADE2; -fx-text-fill: red; -fx-font-weight: bold;");
+        clickedButton.setStyle("-fx-background-color: #5DADE2; -fx-text-fill: black; -fx-font-weight: bold;");
         activeButton = clickedButton;
 
     }
@@ -277,11 +282,14 @@ public class Controller {
         classDiagram.width = width;
         classDiagram.height = height;
 
-        // Draw the class rectangle
-        gc.setFill(Color.WHITE);
+        // Check if this diagram is selected
+        boolean isSelected = selectedComponent == classDiagram;
+
+        // Draw the class rectangle with a light blue fill and blue border if selected
+        gc.setFill(isSelected ? Color.LIGHTBLUE : Color.WHITE); // Light blue for selected
         gc.fillRect(x, y, width, height);
-        gc.setStroke(Color.BLACK);
-        gc.setLineWidth(2);
+        gc.setStroke(isSelected ? Color.BLUE : Color.BLACK); // Blue border for selected
+        gc.setLineWidth(isSelected ? 3 : 2); // Thicker border for selected
         gc.strokeRect(x, y, width, height);
 
         // Draw separators
@@ -291,7 +299,19 @@ public class Controller {
         // Draw class name
         gc.setFill(Color.BLACK);
         gc.setFont(Font.font("Arial", 14));
-        gc.fillText(classDiagram.className, x + 10, y + rowHeight / 2 + 5); // Centered vertically in the row
+        gc.setFill(Color.BLACK);
+        gc.setFont(Font.font("Arial", 14));
+
+// Use a Text object to calculate the text width
+        Text textHelper = new Text(classDiagram.className);
+        textHelper.setFont(gc.getFont());
+        double textWidth = textHelper.getBoundsInLocal().getWidth(); // Calculate text width
+        double textHeight = textHelper.getBoundsInLocal().getHeight(); // Calculate text height
+
+        double textX = x + (width - textWidth) / 2; // Center the text horizontally
+        double textY = y + rowHeight / 2 + textHeight / 4; // Center the text vertically
+
+        gc.fillText(classDiagram.className, textX, textY);
 
         // Draw attributes (leave space if empty)
         gc.setFont(Font.font("Arial", 12));
@@ -330,7 +350,6 @@ public class Controller {
         }
     }
 
-
     private double getMaxTextWidth(GraphicsContext gc, ClassDiagram classDiagram) {
         Text textHelper = new Text();
         textHelper.setFont(Font.font("Arial", 12));
@@ -357,18 +376,24 @@ public class Controller {
     }
 
     private void selectDiagram(double mouseX, double mouseY) {
+        // Iterate over all class diagrams to find the one containing the mouse coordinates
         for (Map.Entry<String, ClassDiagram> entry : diagrams.entrySet()) {
             ClassDiagram diagram = entry.getValue();
+
+            // Check if the mouse click falls within the bounding box of the class diagram
             if (mouseX >= diagram.x && mouseX <= diagram.x + diagram.width &&
-                    mouseY >= diagram.y && mouseY <= diagram.y + diagram.getHeight()) {
-                selectedDiagramKey = entry.getKey();
-                selectedComponent = diagram;
+                    mouseY >= diagram.y && mouseY <= diagram.y + diagram.height) {
+                selectedDiagramKey = entry.getKey(); // Store the selected diagram key
+                selectedComponent = diagram;        // Mark the class diagram as selected
                 return;
             }
         }
+
+        // If no diagram is selected, clear the selection
         selectedDiagramKey = null;
-        selectedComponent = null;// No diagram selected
+        selectedComponent = null;
     }
+
 
     private void onMousePressed(MouseEvent event) {
         GraphicsContext gc = ((Canvas) canvasContainer.getChildren().get(0)).getGraphicsContext2D();
@@ -890,41 +915,46 @@ public class Controller {
             double[] start = line.getStartPoint();
             double[] end = line.getEndPoint();
 
-            if (line.equals(selectedComponent)) {
-                // Highlight the selected line
-                gc.setLineWidth(3); // Thicker line
-                gc.setStroke(Color.ORANGE); // Highlight color
-            } else {
-                // Regular line
-                gc.setLineWidth(2);
-                gc.setStroke(Color.BLACK);
-            }
+            // Check if the line is selected
+            boolean isSelected = line.equals(selectedComponent);
 
-            // Draw the line
+            // Draw the base line in black
+            gc.setLineWidth(2);
+            gc.setStroke(Color.BLACK);
             gc.strokeLine(start[0], start[1], end[0], end[1]);
 
-            // Optionally redraw diamonds for aggregation/composition
+            // If selected, draw a dark blue boundary over the base line
+            if (isSelected) {
+                gc.setLineWidth(4); // Slightly thicker boundary
+                gc.setStroke(Color.BLUE);
+                gc.strokeLine(start[0], start[1], end[0], end[1]);
+            }
+
+            // Optionally redraw diamonds or shapes with boundary highlighting
             if (line.lineType == aggregationButton) {
-                drawDiamond(gc, end[0], end[1], start[0], start[1], false);
+                drawDiamond(gc, end[0], end[1], start[0], start[1], isSelected, false); // Hollow diamond
+            } else if (line.lineType == compositionButton) {
+                drawDiamond(gc, end[0], end[1], start[0], start[1], isSelected, true); // Filled diamond
+            } else if (line.lineType == InheritanceButton) {
+                drawHollowTriangle(gc, end[0], end[1], start[0], start[1], isSelected); // Hollow triangle
             }
-            else if (line.lineType == InheritanceButton) {
-                drawHollowTriangle(gc, end[0], end[1], start[0], start[1]);
-            }
-            else if (line.lineType == compositionButton) {
-                drawDiamond(gc, end[0], end[1], start[0], start[1], true);
-            }
+
+            // Draw line text if it exists
             if (line.text != null && !line.text.isEmpty()) {
                 double midX = (start[0] + end[0]) / 2;
                 double midY = (start[1] + end[1]) / 2;
 
-                gc.setFill(Color.BLACK); // Text color
+                // Keep text black for simplicity
+                gc.setFill(Color.BLACK);
                 gc.setFont(Font.font("Arial", 12));
                 gc.fillText(line.text, midX - line.text.length() * 3, midY - 5); // Adjust position based on text length
             }
         }
     }
-    private void drawHollowTriangle(GraphicsContext gc, double endX, double endY, double startX, double startY) {
-        double triangleSize = 20; // Size of the triangle
+
+
+    private void drawHollowTriangle(GraphicsContext gc, double endX, double endY, double startX, double startY, boolean isSelected) {
+        double triangleSize = 15; // Size of the triangle
 
         // Calculate the angle of the line
         double angle = Math.atan2(endY - startY, endX - startX);
@@ -939,11 +969,12 @@ public class Controller {
         xPoints[2] = endX - triangleSize * Math.cos(angle + Math.PI / 6); // Right base
         yPoints[2] = endY - triangleSize * Math.sin(angle + Math.PI / 6);
 
-        // Draw the triangle
-        gc.setStroke(Color.BLACK);
-        gc.setLineWidth(2);
+        // Draw the triangle with highlight if selected
+        gc.setStroke(isSelected ? Color.BLUE : Color.BLACK);
+        gc.setLineWidth(isSelected ? 3 : 2); // Thicker border if selected
         gc.strokePolygon(xPoints, yPoints, 3); // Hollow triangle
     }
+
     private void showLineTextField(double mouseX, double mouseY, LineConnection line, GraphicsContext gc) {
         // Calculate the midpoint of the line
         double[] start = line.getStartPoint();
@@ -1013,8 +1044,8 @@ public class Controller {
 
 
     // Helper method to draw the diamond
-    private void drawDiamond(GraphicsContext gc, double endX, double endY, double startX, double startY, boolean filled) {
-        double diamondSize = 20; // Increased size of the diamond
+    private void drawDiamond(GraphicsContext gc, double endX, double endY, double startX, double startY, boolean isSelected, boolean filled) {
+        double diamondSize = 15; // Size of the diamond
 
         // Calculate the angle of the line
         double angle = Math.atan2(endY - startY, endX - startX);
@@ -1026,19 +1057,19 @@ public class Controller {
         yPoints[0] = endY;
         xPoints[1] = endX - diamondSize * Math.cos(angle - Math.PI / 4);
         yPoints[1] = endY - diamondSize * Math.sin(angle - Math.PI / 4);
-        xPoints[2] = endX - 2 * diamondSize * Math.cos(angle); // Bottom point (distance increased for hollow effect)
+        xPoints[2] = endX - 2 * diamondSize * Math.cos(angle); // Bottom point
         yPoints[2] = endY - 2 * diamondSize * Math.sin(angle);
         xPoints[3] = endX - diamondSize * Math.cos(angle + Math.PI / 4);
         yPoints[3] = endY - diamondSize * Math.sin(angle + Math.PI / 4);
 
-        // Draw the diamond
+        // Draw the diamond with highlight if selected
         if (filled) {
-            gc.setFill(Color.BLACK);
-            gc.fillPolygon(xPoints, yPoints, 4); // Filled diamond for composition
+            gc.setFill(isSelected ? Color.BLUE : Color.BLACK);
+            gc.fillPolygon(xPoints, yPoints, 4); // Filled diamond
         } else {
-            gc.setStroke(Color.BLACK);
-            gc.setLineWidth(2); // Increase line thickness for a more distinct hollow diamond
-            gc.strokePolygon(xPoints, yPoints, 4); // Hollow diamond for aggregation
+            gc.setStroke(isSelected ? Color.BLUE : Color.BLACK);
+            gc.setLineWidth(isSelected ? 3 : 2); // Thicker border if selected
+            gc.strokePolygon(xPoints, yPoints, 4); // Hollow diamond
         }
     }
 
