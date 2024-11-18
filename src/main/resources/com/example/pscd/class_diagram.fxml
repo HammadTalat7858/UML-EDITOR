@@ -65,7 +65,6 @@
                     <Label style="-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: white;" text="TOOLBOX" />
                     <Label style="-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: lightgray;" text="Classes (Basic)" />
                     <Button fx:id="classButton" style="-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;" text="Class" />
-                    <Button fx:id="interfaceButton" style="-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;" text="Interface" />
                     <Button fx:id="associationButton" style="-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;" text="Association" />
                     <Button fx:id="aggregationButton" style="-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;" text="Aggregation" />
                     <Button fx:id="compositionButton" style="-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;" text="Composition" />

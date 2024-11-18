@@ -43,8 +43,7 @@ public class Controller {
     @FXML   private Button deleteButton;
     @FXML
     private Button classButton;
-    @FXML
-    private Button interfaceButton;
+
     @FXML
     private Button associationButton;
     @FXML
@@ -142,7 +141,6 @@ public class Controller {
 
         List<Button> buttons = new ArrayList<>();
         buttons.add(classButton);
-        buttons.add(interfaceButton);
         buttons.add(associationButton);
         buttons.add(aggregationButton);
         buttons.add(compositionButton);
