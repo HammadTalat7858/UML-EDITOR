@@ -35,7 +35,7 @@ import javax.swing.*;
 public class Controller {
 
     public Pane canvasContainer;
-    private Scale scaleTransform;  // To keep track of the scale transformation
+    private Scale scaleTransform;
 
     @FXML
     private VBox toolboxVBox;
@@ -76,7 +76,7 @@ public class Controller {
 
     @FXML
     private TextField attributesField;
-    private Object selectedComponent = null; // Tracks the currently selected component
+    private Object selectedComponent = null;
 
     @FXML
     private TextField operationsField;
@@ -117,6 +117,19 @@ public class Controller {
             if (newScene != null) {
                 newScene.addEventFilter(KeyEvent.KEY_PRESSED, this::handleZoomKeys);
             }
+        });
+        canvasContainer.widthProperty().addListener((observable, oldValue, newValue) -> {
+            gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
+            canvas.setWidth(newValue.doubleValue());
+            drawGrid(gc);  // Redraw the grid with the new width
+            redrawCanvas(gc);  // Redraw class diagrams and connections
+        });
+
+        canvasContainer.heightProperty().addListener((observable, oldValue, newValue) -> {
+            gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
+            canvas.setHeight(newValue.doubleValue());
+            drawGrid(gc);  // Redraw the grid with the new height
+            redrawCanvas(gc);  // Redraw class diagrams and connections
         });
 
         // Draw the grid once
@@ -189,11 +202,11 @@ public class Controller {
 
     private void handleZoomKeys(KeyEvent event) {
         if (event.isControlDown()) {
-            if (event.getCode() == KeyCode.PLUS || event.getCode() == KeyCode.EQUALS) {
+            if (event.getCode() == KeyCode.ADD ) {
                 // Zoom in
                 scaleTransform.setX(scaleTransform.getX() * 1.1);
                 scaleTransform.setY(scaleTransform.getY() * 1.1);
-            } else if (event.getCode() == KeyCode.MINUS) {
+            } else if (event.getCode() == KeyCode.SUBTRACT) {
                 // Zoom out
                 scaleTransform.setX(scaleTransform.getX() * 0.9);
                 scaleTransform.setY(scaleTransform.getY() * 0.9);
@@ -203,32 +216,41 @@ public class Controller {
 
     private void handleButtonClick(Button clickedButton, List<Button> buttons) {
         for (Button button : buttons) {
-            button.setStyle("-fx-background-color: white; -fx-text-fill: black; -fx-border-color: gray; -fx-font-weight: normal;");
+            button.setStyle("-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;");
         }
 
         // Apply selected style to the clicked button
-        clickedButton.setStyle("-fx-background-color: white; -fx-text-fill: blue; -fx-border-color: gray; -fx-font-weight: bold;");
+        clickedButton.setStyle("-fx-background-color: #5DADE2; -fx-text-fill: red; -fx-font-weight: bold;");
         activeButton = clickedButton;
 
     }
 
     private void deselectAllButtons(List<Button> buttons) {
         for (Button button : buttons) {
-            button.setStyle("-fx-background-color: white; -fx-text-fill: black; -fx-border-color: gray; -fx-font-weight: normal;");
+            button.setStyle("-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;");
         }
-        activeButton = null; // No active button selected
+        activeButton = null;
     }
 
     private void drawGrid(GraphicsContext gc) {
+        double canvasWidth = canvasContainer.getWidth();
+        double canvasHeight = canvasContainer.getHeight();
+
+        gc.clearRect(0, 0, canvasWidth, canvasHeight);
+
+        double gridSpacing = 10;
+
         gc.setLineWidth(0.5);
         gc.setStroke(Color.rgb(180, 180, 180));
-        for (int x = 0; x <= 880; x += 10) {
-            gc.strokeLine(x, 0, x, 800);
+
+        for (double x = 0; x <= canvasWidth; x += gridSpacing) {
+            gc.strokeLine(x, 0, x, canvasHeight);
         }
-        for (int y = 0; y <= 800; y += 10) {
-            gc.strokeLine(0, y, 880, y);
+        for (double y = 0; y <= canvasHeight; y += gridSpacing) {
+            gc.strokeLine(0, y, canvasWidth, y);
         }
     }
+
 
     private void createClassDiagram(GraphicsContext gc, double x, double y) {
         String key = "Class" + x + "," + y;
@@ -243,12 +265,13 @@ public class Controller {
 
         // Calculate the required width based on the widest text
         double maxTextWidth = getMaxTextWidth(gc, classDiagram);
-        double width = Math.max(classDiagramWidth, maxTextWidth + 20); // Add padding
+        double width = Math.max(classDiagramWidth, maxTextWidth + 40); // Add more padding
 
-        double baseHeight = 50;
-        double attributeHeight = 20 * classDiagram.attributes.size();
-        double operationHeight = 20 * classDiagram.operations.size();
-        double height = baseHeight + attributeHeight + operationHeight;
+        double rowHeight = 30; // Row height for each section
+        double baseHeight = rowHeight; // Height for the class name row
+        double attributeHeight = Math.max(rowHeight, rowHeight * classDiagram.attributes.size()); // At least one row for attributes
+        double operationHeight = Math.max(rowHeight, rowHeight * classDiagram.operations.size()); // At least one row for operations
+        double height = baseHeight + attributeHeight + operationHeight; // Total height of the class diagram
 
         // Update the class diagram dimensions
         classDiagram.width = width;
@@ -262,34 +285,52 @@ public class Controller {
         gc.strokeRect(x, y, width, height);
 
         // Draw separators
-        gc.strokeLine(x, y + 30, x + width, y + 30);
-        gc.strokeLine(x, y + 30 + attributeHeight, x + width, y + 30 + attributeHeight);
+        gc.strokeLine(x, y + rowHeight, x + width, y + rowHeight); // Separator below class name
+        gc.strokeLine(x, y + rowHeight + attributeHeight, x + width, y + rowHeight + attributeHeight); // Separator below attributes
 
         // Draw class name
         gc.setFill(Color.BLACK);
         gc.setFont(Font.font("Arial", 14));
-        gc.fillText(classDiagram.className, x + 10, y + 20);
+        gc.fillText(classDiagram.className, x + 10, y + rowHeight / 2 + 5); // Centered vertically in the row
 
-        // Draw attributes
+        // Draw attributes (leave space if empty)
         gc.setFont(Font.font("Arial", 12));
-        for (int i = 0; i < classDiagram.attributes.size(); i++) {
-            gc.fillText(classDiagram.attributes.get(i), x + 10, y + 40 + i * 20);
+        if (classDiagram.attributes.isEmpty()) {
+            gc.fillText(" ", x + 10, y + rowHeight + rowHeight / 2 + 5); // Placeholder for empty attributes
+        } else {
+            for (int i = 0; i < classDiagram.attributes.size(); i++) {
+                gc.fillText(
+                        classDiagram.attributes.get(i),
+                        x + 10,
+                        y + rowHeight + (i + 1) * rowHeight - 10 // Adjusted for spacing
+                );
+            }
         }
 
-        // Draw operations
-        for (int i = 0; i < classDiagram.operations.size(); i++) {
-            gc.fillText(classDiagram.operations.get(i), x + 10, y + 50 + attributeHeight + i * 20);
+        // Draw operations (leave space if empty)
+        if (classDiagram.operations.isEmpty()) {
+            gc.fillText(" ", x + 10, y + rowHeight + attributeHeight + rowHeight / 2 + 5); // Placeholder for empty operations
+        } else {
+            for (int i = 0; i < classDiagram.operations.size(); i++) {
+                gc.fillText(
+                        classDiagram.operations.get(i),
+                        x + 10,
+                        y + rowHeight + attributeHeight + (i + 1) * rowHeight - 10 // Adjusted for spacing
+                );
+            }
         }
 
         // Draw connection points
-        gc.setFill(Color.RED);
+        gc.setFill(Color.RED); // Red for connection points
         double[][] connectionPoints = classDiagram.getConnectionPoints();
-        double radius = 5.0; // Radius of connection points
+        double radius = 3.0; // Smaller radius for connection points
 
         for (double[] point : connectionPoints) {
             gc.fillOval(point[0] - radius, point[1] - radius, 2 * radius, 2 * radius);
         }
     }
+
+
     private double getMaxTextWidth(GraphicsContext gc, ClassDiagram classDiagram) {
         Text textHelper = new Text();
         textHelper.setFont(Font.font("Arial", 12));
@@ -1121,13 +1162,26 @@ public class Controller {
         }
 
         public double[][] getConnectionPoints() {
+            double halfWidth = width / 2;
+            double halfHeight = height / 2;
+
             return new double[][]{
-                    {x + width / 2, y},             // Top-center
-                    {x + width, y + height / 2},    // Right-center
-                    {x + width / 2, y + height},    // Bottom-center
-                    {x, y + height / 2}             // Left-center
+                    // Top side (2 points)
+                    {x + width / 3, y},              // Top-left
+                    {x + 2 * width / 3, y},          // Top-right
+
+                    // Bottom side (2 points)
+                    {x + width / 3, y + height},     // Bottom-left
+                    {x + 2 * width / 3, y + height}, // Bottom-right
+
+                    // Left side (1 point)
+                    {x, y + halfHeight},             // Left-center
+
+                    // Right side (1 point)
+                    {x + width, y + halfHeight},     // Right-center
             };
         }
+
 
         public void drawConnectionPoints(GraphicsContext gc) {
             gc.setFill(Color.RED);
