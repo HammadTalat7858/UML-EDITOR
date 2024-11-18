@@ -64,12 +64,12 @@
                 <VBox fx:id="toolboxVBox" alignment="CENTER" prefHeight="700.0" prefWidth="200.0" spacing="20.0" style="-fx-background-color: #000000; -fx-border-color: white; -fx-border-width: 0 4 0 0; -fx-padding: 15;" BorderPane.alignment="CENTER">
                     <Label style="-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: white;" text="TOOLBOX" />
                     <Label style="-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: lightgray;" text="Classes (Basic)" />
-                    <Button fx:id="classButton" style="-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;" text="Class" />
-                    <Button fx:id="interfaceButton" style="-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;" text="Interface" />
+                    <Button fx:id="classButton" style="-fx-background-color: #6A5ACD; -fx-text-fill: white; -fx-font-weight: bold;" text="Class" />
+                    <Button fx:id="interfaceButton" style="-fx-background-color: #6A5ACD; -fx-text-fill: white; -fx-font-weight: bold;" text="Interface" />
                     <Button fx:id="associationButton" style="-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;" text="Association" />
                     <Button fx:id="aggregationButton" style="-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;" text="Aggregation" />
                     <Button fx:id="compositionButton" style="-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;" text="Composition" />
-                    <Button fx:id="InheritanceButton" style="-fx-background-color: #6A5ACD; -fx-text-fill: white; -fx-font-weight: bold;" text="Inheritance" />
+                    <Button fx:id="InheritanceButton" style="-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;" text="Inheritance" />
                 </VBox>
             </left>
             <right>
@@ -89,7 +89,7 @@
                                 </FXCollections>
                             </items>
                         </ComboBox>
-                        <Button fx:id="addAttributeButton" style="-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;" text="Add Attribute" />
+                        <Button fx:id="addAttributeButton" style="-fx-background-color: #7B68EE; -fx-text-fill: white; -fx-font-weight: bold;" text="Add Attribute" />
                     </VBox>
 
                     <!-- Operations Section -->
@@ -105,7 +105,7 @@
                                 </FXCollections>
                             </items>
                         </ComboBox>
-                        <Button fx:id="addOperationButton" style="-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;" text="Add Operation" />
+                        <Button fx:id="addOperationButton" style="-fx-background-color: #7B68EE; -fx-text-fill: white; -fx-font-weight: bold;" text="Add Operation" />
                     </VBox>
 
                     <!-- Generic Delete Button -->
