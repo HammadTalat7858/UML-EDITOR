@@ -409,6 +409,32 @@ public class Controller {
         selectedComponent = null;
     }
 
+    private boolean isEmptyArea(double mouseX, double mouseY) {
+        // Check if mouse is near any class diagram
+        for (ClassDiagram diagram : diagrams.values()) {
+            if (mouseX >= diagram.x && mouseX <= diagram.x + diagram.width &&
+                    mouseY >= diagram.y && mouseY <= diagram.y + diagram.height) {
+                return false; // Mouse is over a class diagram
+            }
+        }
+
+        // Check if mouse is near any line
+        for (LineConnection line : lineConnections) {
+            if (isNearLine(mouseX, mouseY, line)) {
+                return false; // Mouse is near a line
+            }
+
+            // Check control points of the line
+            for (double[] controlPoint : line.controlPoints) {
+                if (isNear(mouseX, mouseY, controlPoint[0], controlPoint[1])) {
+                    return false; // Mouse is near a control point
+                }
+            }
+        }
+
+        // If none of the above conditions matched, it's an empty area
+        return true;
+    }
 
     private void onMousePressed(MouseEvent event) {
         GraphicsContext gc = ((Canvas) canvasContainer.getChildren().get(0)).getGraphicsContext2D();
@@ -421,11 +447,31 @@ public class Controller {
                     return;
                 }
             }
-        } else if (activeButton == null) {
-            // Handle selection
+        }
+        else if (activeButton == null && selectedComponent instanceof LineConnection &&(!(isEmptyArea(event.getX(), event.getY())))) {
+            LineConnection selectedLine = (LineConnection) selectedComponent;
+
+            // Check if clicking near an existing control point
+            for (double[] controlPoint : selectedLine.controlPoints) {
+                if (isNear(event.getX(), event.getY(), controlPoint[0], controlPoint[1])) {
+                    // Select the control point
+                    selectedComponent = controlPoint;
+                    return;
+                }
+            }
+
+            // Check if clicking near the line to add a new control point
+            if (isNearLine(event.getX(), event.getY(), selectedLine)) {
+                selectedLine.controlPoints.add(new double[]{event.getX(), event.getY()});
+                redrawCanvas(gc);
+                return;
+            }
+        }
+        else if (activeButton == null) {
+
             boolean componentSelected = false;
 
-            // Check if a line is selected
+            // Check if a line is clicked
             for (LineConnection line : lineConnections) {
                 if (isNearLine(event.getX(), event.getY(), line)) {
                     selectedComponent = line;
@@ -434,7 +480,7 @@ public class Controller {
                 }
             }
 
-            // Check if a class diagram is selected
+            // Check if a class diagram is clicked
             if (!componentSelected) {
                 selectDiagram(event.getX(), event.getY());
                 if (selectedDiagramKey != null) {
@@ -446,14 +492,16 @@ public class Controller {
                 }
             }
 
-            // If no component is selected, deselect
+            // If no component is selected, deselect everything
             if (!componentSelected) {
                 selectedComponent = null;
             }
 
-            // Redraw to reflect selection
+            // Redraw to reflect deselection or selection
             redrawCanvas(gc);
-        } else if (activeButton == associationButton || activeButton == aggregationButton ||
+        }
+
+        else if (activeButton == associationButton || activeButton == aggregationButton ||
                 activeButton == compositionButton || activeButton == InheritanceButton) {
             // Start line drawing
             for (ClassDiagram diagram : diagrams.values()) {
@@ -469,7 +517,6 @@ public class Controller {
             }
         }
     }
-
 
     @FXML
     private void deleteSelectedComponent() {
@@ -505,9 +552,9 @@ public class Controller {
         GraphicsContext gc = ((Canvas) canvasContainer.getChildren().get(0)).getGraphicsContext2D();
 
         if (activeButton == null) {
-            // Handle dragging a class diagram
-            if (selectedDiagramKey != null) {
-                ClassDiagram diagram = diagrams.get(selectedDiagramKey);
+            if (selectedComponent instanceof ClassDiagram) {
+                // Handle dragging a class diagram
+                ClassDiagram diagram = (ClassDiagram) selectedComponent;
 
                 // Update the diagram's position while respecting canvas boundaries
                 double newX = Math.max(0, Math.min(event.getX() - offsetX, canvasContainer.getWidth() - diagram.width));
@@ -518,17 +565,43 @@ public class Controller {
 
                 // Clear and redraw the canvas to reflect changes
                 gc.clearRect(0, 0, canvasContainer.getWidth(), canvasContainer.getHeight());
-                redrawCanvas(gc); // Automatically adjusts lines connected to the diagram
+                redrawCanvas(gc);
+            } else if (selectedComponent instanceof double[]) {
+                // Handle dragging an existing control point
+                double[] controlPoint = (double[]) selectedComponent;
+                controlPoint[0] = event.getX();
+                controlPoint[1] = event.getY();
+
+                // Clear and redraw the canvas to reflect changes
+                gc.clearRect(0, 0, canvasContainer.getWidth(), canvasContainer.getHeight());
+                redrawCanvas(gc);
+            } else if (selectedComponent instanceof LineConnection) {
+                // Handle dragging the line by moving all control points
+                LineConnection selectedLine = (LineConnection) selectedComponent;
+
+                for (double[] controlPoint : selectedLine.controlPoints) {
+                    controlPoint[0] += event.getX() - startX;
+                    controlPoint[1] += event.getY() - startY;
+                }
+
+                // Update startX and startY to track the dragging motion
+                startX = event.getX();
+                startY = event.getY();
+
+                // Clear and redraw the canvas to reflect changes
+                gc.clearRect(0, 0, canvasContainer.getWidth(), canvasContainer.getHeight());
+                redrawCanvas(gc);
             }
         } else if (isDrawingLine) {
             // Handle line preview
             gc.clearRect(0, 0, canvasContainer.getWidth(), canvasContainer.getHeight());
-            redrawCanvas(gc); // Redraw existing elements, including connection points
+            redrawCanvas(gc);
             gc.setStroke(Color.GRAY);
             gc.setLineWidth(1);
             gc.strokeLine(startX, startY, event.getX(), event.getY());
         }
     }
+
     private void handleClassEditing(MouseEvent event, GraphicsContext gc) {
         for (Map.Entry<String, ClassDiagram> entry : diagrams.entrySet()) {
             ClassDiagram classDiagram = entry.getValue();
@@ -928,25 +1001,38 @@ public class Controller {
 
         // Redraw all dynamic line connections
         for (LineConnection line : lineConnections) {
-            double[] start = line.getStartPoint();
-            double[] end = line.getEndPoint();
-
-            // Check if the line is selected
+            List<double[]> points = line.getAllPoints(); // Get all points (start, control points, and end)
             boolean isSelected = line.equals(selectedComponent);
 
-            // Draw the base line in black
-            gc.setLineWidth(2);
+            // Draw each segment of the line
             gc.setStroke(Color.BLACK);
-            gc.strokeLine(start[0], start[1], end[0], end[1]);
-
-            // If selected, draw a dark blue boundary over the base line
-            if (isSelected) {
-                gc.setLineWidth(4); // Slightly thicker boundary
-                gc.setStroke(Color.BLUE);
+            gc.setLineWidth(2);
+            for (int i = 0; i < points.size() - 1; i++) {
+                double[] start = points.get(i);
+                double[] end = points.get(i + 1);
                 gc.strokeLine(start[0], start[1], end[0], end[1]);
             }
 
-            // Optionally redraw diamonds or shapes with boundary highlighting
+            // If selected, highlight the line segments
+            if (isSelected) {
+                gc.setStroke(Color.BLUE);
+                gc.setLineWidth(4);
+                for (int i = 0; i < points.size() - 1; i++) {
+                    double[] start = points.get(i);
+                    double[] end = points.get(i + 1);
+                    gc.strokeLine(start[0], start[1], end[0], end[1]);
+                }
+            }
+
+            // Draw control points for the line
+            gc.setFill(Color.BLACK); // Control points are now black circles
+            for (double[] controlPoint : line.controlPoints) {
+                gc.fillOval(controlPoint[0] - 4, controlPoint[1] - 4, 8, 8); // Draw black circles for control points
+            }
+
+            // Optionally redraw diamonds or shapes at the end of the line
+            double[] start = points.get(points.size() - 2); // Second-to-last point
+            double[] end = points.get(points.size() - 1);   // Last point
             if (line.lineType == aggregationButton) {
                 drawDiamond(gc, end[0], end[1], start[0], start[1], isSelected, false); // Hollow diamond
             } else if (line.lineType == compositionButton) {
@@ -1031,13 +1117,25 @@ public class Controller {
 
 
     private boolean isNearLine(double mouseX, double mouseY, LineConnection line) {
-        double[] start = line.getStartPoint();
-        double[] end = line.getEndPoint();
+        List<double[]> points = new ArrayList<>();
+        points.add(line.getStartPoint()); // Add starting point
+        points.addAll(line.controlPoints); // Add all control points
+        points.add(line.getEndPoint()); // Add ending point
 
-        // Calculate distance of the point (mouseX, mouseY) to the line segment
-        double distance = pointToSegmentDistance(mouseX, mouseY, start[0], start[1], end[0], end[1]);
-        return distance < 10.0; // Threshold for proximity
+        // Iterate through the segments between points
+        for (int i = 0; i < points.size() - 1; i++) {
+            double[] start = points.get(i);
+            double[] end = points.get(i + 1);
+
+            // Check if the mouse is near the segment
+            if (pointToSegmentDistance(mouseX, mouseY, start[0], start[1], end[0], end[1]) < 10.0) {
+                return true; // Close enough to the line segment
+            }
+        }
+
+        return false; // Not near any segment of the line
     }
+
     private double pointToSegmentDistance(double px, double py, double x1, double y1, double x2, double y2) {
         double lineLengthSquared = Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2);
 
@@ -1071,11 +1169,11 @@ public class Controller {
         double[] yPoints = new double[4];
         xPoints[0] = endX; // Tip of the diamond
         yPoints[0] = endY;
-        xPoints[1] = endX - diamondSize * Math.cos(angle - Math.PI / 4);
+        xPoints[1] = endX - diamondSize * Math.cos(angle - Math.PI / 4); // Top-left corner
         yPoints[1] = endY - diamondSize * Math.sin(angle - Math.PI / 4);
-        xPoints[2] = endX - 2 * diamondSize * Math.cos(angle); // Bottom point
+        xPoints[2] = endX - 2 * diamondSize * Math.cos(angle); // Bottom corner
         yPoints[2] = endY - 2 * diamondSize * Math.sin(angle);
-        xPoints[3] = endX - diamondSize * Math.cos(angle + Math.PI / 4);
+        xPoints[3] = endX - diamondSize * Math.cos(angle + Math.PI / 4); // Top-right corner
         yPoints[3] = endY - diamondSize * Math.sin(angle + Math.PI / 4);
 
         // Draw the diamond with highlight if selected
@@ -1141,6 +1239,36 @@ public class Controller {
 
         return accessModifier + " " + trimmed;
     }
+    private String parseAttribute(String attribute) {
+        // Extract the parts of the attribute in the format: accessModifier name:type
+        String[] parts = attribute.split(":");
+        if (parts.length == 2) {
+            String accessModifierAndName = parseAccessModifier(parts[0]);
+            String type = parts[1].trim();
+            return accessModifierAndName + " " + type;
+        }
+        // If the format is invalid, return a comment to indicate the issue
+        return "// Invalid attribute format: " + attribute;
+    }
+
+    private String parseOperation(String operation) {
+        // Extract the parts of the operation in the format: accessModifier name():returnType
+        String[] parts = operation.split(":");
+        if (parts.length == 2) {
+            String accessModifierAndName = parseAccessModifier(parts[0]);
+            String[] accessModifierAndNameParts = accessModifierAndName.split(" ");
+            if (accessModifierAndNameParts.length == 2) {
+                String accessModifier = accessModifierAndNameParts[0];
+                String name = accessModifierAndNameParts[1];
+                String returnType = parts[1].trim();
+                return accessModifier + " " + returnType + " " + name + "() {\n        // TODO: Implement this method\n    }";
+            }
+        }
+        // If the format is invalid, return a comment to indicate the issue
+        return "// Invalid operation format: " + operation;
+    }
+
+
     private String generateClassCode(ClassDiagram classDiagram) {
         StringBuilder code = new StringBuilder();
 
@@ -1174,15 +1302,13 @@ public class Controller {
 
         // Attributes
         for (String attribute : classDiagram.attributes) {
-            code.append("    ").append(parseAccessModifier(attribute)).append(";\n");
+            code.append("    ").append(parseAttribute(attribute)).append(";\n");
         }
         code.append("\n");
 
         // Operations
         for (String operation : classDiagram.operations) {
-            code.append("    ").append(parseAccessModifier(operation)).append(" {\n");
-            code.append("        // TODO: Implement this method\n");
-            code.append("    }\n\n");
+            code.append("    ").append(parseOperation(operation)).append("\n\n");
         }
 
         code.append("}\n");
@@ -1248,9 +1374,10 @@ public class Controller {
         ClassDiagram endDiagram;
         int startConnectionIndex;
         int endConnectionIndex;
-        transient Button lineType; // Mark Button as
+        transient Button lineType; // Mark Button as transient
         String lineTypeText;       // Store the button's text or purpose for reinitialization
         String text;
+        List<double[]> controlPoints = new ArrayList<>(); // Intermediate control points
         private static final long serialVersionUID = 1L;
 
         LineConnection(ClassDiagram startDiagram, int startConnectionIndex,
@@ -1261,7 +1388,7 @@ public class Controller {
             this.endConnectionIndex = endConnectionIndex;
             this.lineType = lineType;
             this.lineTypeText = lineType.getText(); // Save button text or identifier
-            text = "";
+            this.text = "";
         }
 
         public double[] getStartPoint() {
@@ -1270,6 +1397,15 @@ public class Controller {
 
         public double[] getEndPoint() {
             return endDiagram.getConnectionPoints()[endConnectionIndex];
+        }
+
+        public List<double[]> getAllPoints() {
+            // Combine start, control points, and end points for rendering
+            List<double[]> points = new ArrayList<>();
+            points.add(getStartPoint());
+            points.addAll(controlPoints);
+            points.add(getEndPoint());
+            return points;
         }
 
         private void initializeButton(Button aggregationButton, Button compositionButton,
@@ -1286,8 +1422,6 @@ public class Controller {
                 }
             }
         }
-
-
     }
 
 
