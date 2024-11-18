@@ -58,6 +58,8 @@ public class UseCaseController {
     private Actor startActor = null;
     private UseCase startUseCase = null;
     private List<LineConnection> associations = new ArrayList<>();
+    private int startConnectionIndex = -1; // Add this field for the starting connection index
+    private int endConnectionIndex = -1;
 
     @FXML
     public void initialize() {
@@ -68,11 +70,13 @@ public class UseCaseController {
         // Add mouse event listeners to the canvas
         canvas.setOnMousePressed(event -> onMousePressed(event, gc));
         canvas.setOnMouseDragged(event -> onMouseDragged(event, gc));
-        canvas.setOnMouseReleased(event -> onMouseReleased(gc));
+        canvas.setOnMouseReleased(event -> onMouseReleased(event,gc));
 
         // Handle actor button clicks
         actorButton.setOnAction(event -> handleActorButtonClick(gc));
         useCaseButton.setOnAction(event -> handleUseCaseButtonClick(gc));
+        associationButton.setOnAction(event -> handleAssociationButtonClick());
+
 
         // Add listeners to ensure the grid is redrawn when the container size changes
         canvasContainer.widthProperty().addListener((observable, oldValue, newValue) -> {
@@ -91,13 +95,18 @@ public class UseCaseController {
         // Set up event listeners for actor creation
         actorButton.setOnAction(event -> handleActorButtonClick(gc));
         canvas.setOnMouseClicked(event -> {
+
             if (activeButton == actorButton) {
                 createActor(gc, event.getX(), event.getY());
-            }
-            else  if (activeButton == useCaseButton) {
-                createUseCase(gc, event.getX(), event.getY()); // Create a new use case
+
 
             }
+            else  if (activeButton == useCaseButton) {
+                createUseCase(gc, event.getX(), event.getY());
+
+            }
+
+
         });
         toolboxVBox.setOnMouseClicked(event -> deselectActiveButton());
         propertiesPanel.setOnMouseClicked(event -> deselectActiveButton());
@@ -126,11 +135,66 @@ public class UseCaseController {
             gc.strokeLine(0, y, canvasWidth, y);
         }
     }
+    private void deselectActiveElement(GraphicsContext gc) {
+        // Reset selected elements
+        selectedActor = null;
+        selectedUseCase = null;
+
+        // Redraw canvas
+        redrawCanvas(gc);
+    }
+
     private void onMousePressed(MouseEvent event, GraphicsContext gc) {
         double mouseX = event.getX();
         double mouseY = event.getY();
 
-        // Check if an actor is clicked
+        // Handle line drawing logic if the association button is active
+        if (activeButton == associationButton) {
+            // Reset starting variables
+            startActor = null;
+            startUseCase = null;
+            deselectActiveElement(gc);
+            startConnectionIndex = -1;
+
+            // Check for snapping to an actor's connection point
+            for (Actor actor : actors) {
+                for (int i = 0; i < actor.getConnectionPoints().length; i++) {
+                    double[] point = actor.getConnectionPoints()[i];
+                    if (isNear(mouseX, mouseY, point[0], point[1])) {
+                        startX = point[0];
+                        startY = point[1];
+                        startActor = actor;
+                        startConnectionIndex = i; // Record the connection point index
+                        isDrawingAssociation = true;
+                        System.out.println("Started association at Actor: " + actor.getName() + ", Connection Index: " + i);
+                        return; // Exit early once a valid connection point is found
+                    }
+                }
+            }
+
+            // Check for snapping to a use case's connection point
+            for (UseCase useCase : useCases) {
+                for (int i = 0; i < useCase.getConnectionPoints().length; i++) {
+                    double[] point = useCase.getConnectionPoints()[i];
+                    if (isNear(mouseX, mouseY, point[0], point[1])) {
+                        startX = point[0];
+                        startY = point[1];
+                        startUseCase = useCase;
+                        startConnectionIndex = i; // Record the connection point index
+                        isDrawingAssociation = true;
+                        System.out.println("Started association at UseCase: " + useCase.getName() + ", Connection Index: " + i);
+                        return; // Exit early once a valid connection point is found
+                    }
+                }
+            }
+
+            // If no valid connection point is found, show an error
+            System.out.println("No valid start point for association.");
+            showError("Start a line from a valid connection point.");
+            return;
+        }
+
+        // Handle actor selection logic
         for (Actor actor : actors) {
             if (isMouseOverActor(mouseX, mouseY, actor)) {
                 selectedActor = actor;
@@ -153,7 +217,7 @@ public class UseCaseController {
             }
         }
 
-        // Check if a use case is clicked
+        // Handle use case selection logic
         for (UseCase useCase : useCases) {
             if (isMouseOverUseCase(mouseX, mouseY, useCase)) {
                 selectedUseCase = useCase;
@@ -177,12 +241,20 @@ public class UseCaseController {
             selectedActor = null;
             selectedUseCase = null;
             redrawCanvas(gc);
+            System.out.println("Deselected Actor and UseCase.");
         }
     }
+    private boolean isNear(double mouseX, double mouseY, double pointX, double pointY) {
+        double tolerance = 10.0; // Snap radius
+        return Math.abs(mouseX - pointX) < tolerance && Math.abs(mouseY - pointY) < tolerance;
+    }
+
+
 
     private void handleUseCaseButtonClick(GraphicsContext gc) {
         if (activeButton == useCaseButton) {
             deselectActiveButton();
+            deselectActiveElement(gc);
         } else {
             activateButton(useCaseButton);
         }
@@ -305,9 +377,9 @@ public class UseCaseController {
     private void onMouseDragged(MouseEvent event, GraphicsContext gc) {
         double mouseX = event.getX();
         double mouseY = event.getY();
+
+        // Dragging an actor
         if (selectedActor != null) {
-
-
             // Update actor position while dragging (within canvas boundaries)
             double newX = Math.max(20, Math.min(mouseX - dragOffsetX, canvasContainer.getWidth() - 20));
             double newY = Math.max(40, Math.min(mouseY - dragOffsetY, canvasContainer.getHeight() - 40));
@@ -318,6 +390,7 @@ public class UseCaseController {
             redrawCanvas(gc);
             highlightActor(gc, selectedActor);
         }
+
         // Dragging a use case
         if (selectedUseCase != null) {
             // Update use case position while respecting canvas boundaries
@@ -332,18 +405,69 @@ public class UseCaseController {
             redrawCanvas(gc);
             highlightUseCase(gc, selectedUseCase);
         }
+
+        // Preview association line if drawing
+        if (activeButton == associationButton && isDrawingAssociation) {
+            gc.clearRect(0, 0, canvasContainer.getWidth(), canvasContainer.getHeight());
+            redrawCanvas(gc); // Redraw the background and other elements
+            gc.setStroke(Color.GRAY);
+            gc.setLineWidth(1);
+            gc.strokeLine(startX, startY, mouseX, mouseY); // Draw temporary association line
+        }
     }
 
-    private void onMouseReleased(GraphicsContext gc) {
+    private void onMouseReleased(MouseEvent event, GraphicsContext gc) {
+        double mouseX = event.getX();
+        double mouseY = event.getY();
+
+        // Finalize actor position
         if (selectedActor != null) {
-            // Finalize position and redraw the canvas
             redrawCanvas(gc);
             highlightActor(gc, selectedActor);
         }
 
+        // Finalize use case position
         if (selectedUseCase != null) {
             redrawCanvas(gc);
             highlightUseCase(gc, selectedUseCase);
+        }
+
+        // Finalize association line
+        if (activeButton == associationButton && isDrawingAssociation) {
+            for (Actor actor : actors) {
+                for (int i = 0; i < actor.getConnectionPoints().length; i++) {
+                    double[] point = actor.getConnectionPoints()[i];
+                    if (isNear(mouseX, mouseY, point[0], point[1]) && actor != startActor) {
+                        associations.add(new LineConnection(
+                                startActor, startConnectionIndex,
+                                actor, i
+                        ));
+                        isDrawingAssociation = false;
+                        redrawCanvas(gc);
+                        return;
+                    }
+                }
+            }
+
+            for (UseCase useCase : useCases) {
+                for (int i = 0; i < useCase.getConnectionPoints().length; i++) {
+                    double[] point = useCase.getConnectionPoints()[i];
+                    if (isNear(mouseX, mouseY, point[0], point[1]) && useCase != startUseCase) {
+                        associations.add(new LineConnection(
+                                startActor != null ? startActor : startUseCase, startConnectionIndex,
+                                useCase, i
+                        ));
+
+                        isDrawingAssociation = false;
+                        redrawCanvas(gc);
+                        return;
+                    }
+                }
+            }
+
+            showError("Cannot draw line. No valid connection point reached.");
+            isDrawingAssociation = false;
+            redrawCanvas(gc);
         }
     }
 
@@ -359,7 +483,19 @@ public class UseCaseController {
         for (Actor actor : actors) {
             drawActor(gc, actor);
         }
+        for (LineConnection line : associations) {
+            drawAssociationLine(gc, line);
+        }
     }
+    private void drawAssociationLine(GraphicsContext gc, LineConnection line) {
+        double[] start = line.getStartPoint();
+        double[] end = line.getEndPoint();
+
+        gc.setStroke(Color.BLACK);
+        gc.setLineWidth(2);
+        gc.strokeLine(start[0], start[1], end[0], end[1]);
+    }
+
 
     private void highlightActor(GraphicsContext gc, Actor actor) {
         double x = actor.getX();
@@ -388,12 +524,15 @@ public class UseCaseController {
             activeButton.setStyle("-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;");
             activeButton = null; // Clear the active button
         }
+        isDrawingAssociation = false;
+        deselectActiveElement(((Canvas) canvasContainer.getChildren().get(0)).getGraphicsContext2D());
     }
 
     private void handleActorButtonClick(GraphicsContext gc) {
         if (activeButton == actorButton) {
             // Deactivate the actor button if already active
             deselectActiveButton();
+            deselectActiveElement(gc);
         } else {
             // Activate the actor button
             activateButton(actorButton);
@@ -402,14 +541,38 @@ public class UseCaseController {
 
     // Activate a button (change style and set active)
     private void activateButton(Button button) {
+        // Reset the style of all buttons
+        resetAllButtonStyles();
+
+        // Set the new button as active and update its style
         activeButton = button;
         button.setStyle("-fx-background-color: #5DADE2; -fx-text-fill: black; -fx-font-weight: bold;");
     }
+    private void resetAllButtonStyles() {
+        actorButton.setStyle("-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;");
+        useCaseButton.setStyle("-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;");
+        associationButton.setStyle("-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;");
+        // Add other buttons here if necessary
+    }
 
-    // Deactivate a button (reset style)
-    private void deactivateButton(Button button) {
-        activeButton = null;
-        button.setStyle("-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;");
+    private void handleAssociationButtonClick() {
+        if (activeButton == associationButton) {
+            deselectActiveButton();
+
+        } else {
+            activateButton(associationButton);
+        }
+    }
+
+    // Handle the start of an association line
+
+    // Handle dragging to preview the association line
+    private void showError(String message) {
+        javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR);
+        alert.setTitle("Error");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 
     private void createActor(GraphicsContext gc, double x, double y) {
@@ -525,21 +688,35 @@ public class UseCaseController {
     }
     // LineConnection class to store associations
     private static class LineConnection {
-        double startX, startY, endX, endY;
-        Actor startActor, endActor;
-        UseCase startUseCase, endUseCase;
+        private Object startElement; // Actor or UseCase
+        private Object endElement;   // Actor or UseCase
+        private int startConnectionIndex;
+        private int endConnectionIndex;
 
-        public LineConnection(double startX, double startY, double endX, double endY, Actor startActor, UseCase startUseCase, Actor endActor, UseCase endUseCase) {
-            this.startX = startX;
-            this.startY = startY;
-            this.endX = endX;
-            this.endY = endY;
-            this.startActor = startActor;
-            this.startUseCase = startUseCase;
-            this.endActor = endActor;
-            this.endUseCase = endUseCase;
+        public LineConnection(Object startElement, int startConnectionIndex, Object endElement, int endConnectionIndex) {
+            this.startElement = startElement;
+            this.startConnectionIndex = startConnectionIndex;
+            this.endElement = endElement;
+            this.endConnectionIndex = endConnectionIndex;
+        }
+
+        public double[] getStartPoint() {
+            if (startElement instanceof Actor) {
+                return ((Actor) startElement).getConnectionPoints()[startConnectionIndex];
+            } else if (startElement instanceof UseCase) {
+                return ((UseCase) startElement).getConnectionPoints()[startConnectionIndex];
+            }
+            return new double[]{0, 0};
+        }
+
+        public double[] getEndPoint() {
+            if (endElement instanceof Actor) {
+                return ((Actor) endElement).getConnectionPoints()[endConnectionIndex];
+            } else if (endElement instanceof UseCase) {
+                return ((UseCase) endElement).getConnectionPoints()[endConnectionIndex];
+            }
+            return new double[]{0, 0};
         }
     }
-
 
 }
