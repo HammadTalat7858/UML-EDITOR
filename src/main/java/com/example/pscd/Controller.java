@@ -1141,6 +1141,36 @@ public class Controller {
 
         return accessModifier + " " + trimmed;
     }
+    private String parseAttribute(String attribute) {
+        // Extract the parts of the attribute in the format: accessModifier name:type
+        String[] parts = attribute.split(":");
+        if (parts.length == 2) {
+            String accessModifierAndName = parseAccessModifier(parts[0]);
+            String type = parts[1].trim();
+            return accessModifierAndName + " " + type;
+        }
+        // If the format is invalid, return a comment to indicate the issue
+        return "// Invalid attribute format: " + attribute;
+    }
+
+    private String parseOperation(String operation) {
+        // Extract the parts of the operation in the format: accessModifier name():returnType
+        String[] parts = operation.split(":");
+        if (parts.length == 2) {
+            String accessModifierAndName = parseAccessModifier(parts[0]);
+            String[] accessModifierAndNameParts = accessModifierAndName.split(" ");
+            if (accessModifierAndNameParts.length == 2) {
+                String accessModifier = accessModifierAndNameParts[0];
+                String name = accessModifierAndNameParts[1];
+                String returnType = parts[1].trim();
+                return accessModifier + " " + returnType + " " + name + "() {\n        // TODO: Implement this method\n    }";
+            }
+        }
+        // If the format is invalid, return a comment to indicate the issue
+        return "// Invalid operation format: " + operation;
+    }
+
+
     private String generateClassCode(ClassDiagram classDiagram) {
         StringBuilder code = new StringBuilder();
 
@@ -1174,15 +1204,13 @@ public class Controller {
 
         // Attributes
         for (String attribute : classDiagram.attributes) {
-            code.append("    ").append(parseAccessModifier(attribute)).append(";\n");
+            code.append("    ").append(parseAttribute(attribute)).append(";\n");
         }
         code.append("\n");
 
         // Operations
         for (String operation : classDiagram.operations) {
-            code.append("    ").append(parseAccessModifier(operation)).append(" {\n");
-            code.append("        // TODO: Implement this method\n");
-            code.append("    }\n\n");
+            code.append("    ").append(parseOperation(operation)).append("\n\n");
         }
 
         code.append("}\n");
