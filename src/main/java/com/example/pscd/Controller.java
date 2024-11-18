@@ -169,14 +169,21 @@ public class Controller {
         canvasContainer.setOnMouseDragged(this::onMouseDragged);
         canvasContainer.setOnMouseReleased(this::onMouseReleased);
 
-        // Set an event on the toolbox VBox to deselect all buttons when clicking on an empty space
-        toolboxVBox.setOnMouseClicked(event -> deselectAllButtons(buttons));
 
         // Attach handlers for adding attributes and operations
         addAttributeButton.setOnAction(event -> onAddAttribute(gc));
         addOperationButton.setOnAction(event -> onAddOperation(gc));
         deleteButton.setOnAction(actionEvent -> deleteSelectedComponent());
+        toolboxVBox.setOnMouseClicked(event -> {
+            clearSelection();
+            deselectAllButtons(buttons);
+        });
 
+            propertiesPanel.setOnMouseClicked(event -> {
+                clearSelection();
+                deselectAllButtons(buttons);
+
+            });
 
     }
 
@@ -204,6 +211,14 @@ public class Controller {
             event.consume();
         }
     }
+
+    private void clearSelection() {
+        selectedComponent = null; // Clear the selected component (class or line)
+        selectedDiagramKey = null; // Clear the selected diagram key
+        GraphicsContext gc = ((Canvas) canvasContainer.getChildren().get(0)).getGraphicsContext2D();
+        redrawCanvas(gc); // Redraw the canvas to remove highlighting
+    }
+
 
     private void handleZoomKeys(KeyEvent event) {
         if (event.isControlDown()) {
@@ -564,7 +579,7 @@ public class Controller {
         attributeField.setLayoutX(classDiagram.x + 12); // Align with attribute text
         attributeField.setLayoutY(startY - 8); // Adjust Y to match text alignment
         attributeField.setPrefWidth(classDiagramWidth - 24); // Fit inside the class box
-        attributeField.setStyle("-fx-background-color: lightblue; -fx-border-color: transparent; -fx-font-size: 12px; -fx-text-fill: black;");
+        attributeField.setStyle("-fx-background-color: white; -fx-border-color: transparent; -fx-font-size: 12px; -fx-text-fill: black;");
 
         // Add the TextField to the canvas
         canvasContainer.getChildren().add(attributeField);
@@ -598,7 +613,7 @@ public class Controller {
         operationField.setLayoutX(classDiagram.x + 12); // Align with operation text
         operationField.setLayoutY(startY - 8); // Adjust Y to match text alignment
         operationField.setPrefWidth(classDiagramWidth - 24); // Fit inside the class box
-        operationField.setStyle("-fx-background-color: lightblue; -fx-border-color: transparent; -fx-font-size: 12px; -fx-text-fill: black;");
+        operationField.setStyle("-fx-background-color: white; -fx-border-color: transparent; -fx-font-size: 12px; -fx-text-fill: black;");
 
         // Add the TextField to the canvas
         canvasContainer.getChildren().add(operationField);
@@ -627,7 +642,8 @@ public class Controller {
         nameField.setLayoutX(classDiagram.x + 10);
         nameField.setLayoutY(classDiagram.y + 5);
         nameField.setPrefWidth(classDiagramWidth - 20);
-        nameField.setStyle("-fx-border-color: blue; -fx-background-color: lightblue;");
+        nameField.setStyle("-fx-background-color: white; -fx-border-color: transparent; -fx-font-size: 12px; -fx-text-fill: black;");
+
         canvasContainer.getChildren().add(nameField);
         nameField.requestFocus();
 

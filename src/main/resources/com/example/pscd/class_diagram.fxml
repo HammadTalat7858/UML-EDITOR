@@ -73,7 +73,7 @@
                 </VBox>
             </left>
             <right>
-                <VBox fx:id="propertiesVBox" alignment="CENTER" prefHeight="700.0" prefWidth="200.0" spacing="20.0" style="-fx-background-color: #000000; -fx-border-color: white; -fx-border-width: 0 0 0 4; -fx-padding: 15;" BorderPane.alignment="CENTER">
+                <VBox fx:id="propertiesPanel" alignment="CENTER" prefHeight="700.0" prefWidth="200.0" spacing="20.0" style="-fx-background-color: #000000; -fx-border-color: white; -fx-border-width: 0 0 0 4; -fx-padding: 15;" BorderPane.alignment="CENTER">
                     <Label style="-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: white;" text="PROPERTIES" />
 
                     <!-- Attributes Section -->
