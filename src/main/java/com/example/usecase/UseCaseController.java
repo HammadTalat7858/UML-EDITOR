@@ -1,8 +1,10 @@
 package com.example.usecase;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.*;
 import javafx.scene.control.Button;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
@@ -24,6 +26,7 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.util.Optional;
 
 public class UseCaseController {
 
@@ -62,6 +65,7 @@ public class UseCaseController {
     private Button subjectButton;
 
 
+
     private boolean isDrawingAssociation = false; // State for association drawing
     private double startX, startY, endX, endY;    // Line coordinates
     private Actor startActor = null;
@@ -88,6 +92,9 @@ public class UseCaseController {
 
     @FXML
     private MenuItem Load;
+
+    @FXML
+    private MenuItem Close;
 
 
     @FXML
@@ -196,6 +203,25 @@ public class UseCaseController {
     private void exportAsPNG() {
         saveCanvasToFile("png");
     }
+    @FXML
+    private void handleCloseAction() {
+        // Create a confirmation dialog
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Exit Confirmation");
+        alert.setHeaderText("You are about to close the application.");
+        alert.setContentText("Are you sure you want to exit?");
+
+        // Wait for the user's response
+        Optional<ButtonType> result = alert.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            // Exit the application
+            Platform.exit();
+        } else {
+            // If the user cancels, do nothing
+            alert.close();
+        }
+    }
+
 
     private void saveCanvasToFile(String format) {
         Canvas canvas = (Canvas) canvasContainer.getChildren().get(0);
