@@ -1,5 +1,6 @@
 package com.example.pscd;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -26,10 +27,8 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 import javax.swing.*;
 
 public class Controller {
@@ -70,6 +69,8 @@ public class Controller {
 
     @FXML
     private MenuItem Load;
+    @FXML
+    private MenuItem Close;
 
     @FXML
     private VBox propertiesPanel;
@@ -209,6 +210,26 @@ public class Controller {
             event.consume();
         }
     }
+    @FXML
+    private void handleCloseAction() {
+        // Create a confirmation dialog
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Exit Confirmation");
+        alert.setHeaderText("You are about to close the application.");
+        alert.setContentText("Are you sure you want to exit?");
+
+        // Wait for the user's response
+        Optional<ButtonType> result = alert.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            // Exit the application
+            Platform.exit();
+        } else {
+            // If the user cancels, do nothing
+            alert.close();
+        }
+    }
+
+
 
     private void clearSelection() {
         selectedComponent = null; // Clear the selected component (class or line)
