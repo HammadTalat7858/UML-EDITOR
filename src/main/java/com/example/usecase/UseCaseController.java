@@ -2,6 +2,9 @@ package com.example.usecase;
 
 import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
@@ -22,6 +25,8 @@ import java.util.List;
 import javafx.scene.image.PixelReader;
 import javafx.scene.image.WritableImage;
 import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -95,6 +100,10 @@ public class UseCaseController {
 
     @FXML
     private MenuItem Close;
+    @FXML
+    private MenuItem loadusecase;
+    @FXML
+    private MenuItem loadClass;
 
 
     @FXML
@@ -185,6 +194,47 @@ public class UseCaseController {
             gc.strokeLine(0, y, canvasWidth, y);
         }
     }
+    @FXML
+    private void loadUseCaseDiagram() {
+        Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION, "Switch to Use Case Diagram? Unsaved changes will be lost.", ButtonType.YES, ButtonType.NO);
+        confirmation.setTitle("Confirm Switch");
+        confirmation.setHeaderText(null);
+
+        Optional<ButtonType> result = confirmation.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.YES) {
+            try {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/usecase/Use-Case.fxml"));
+                Parent useCaseRoot = loader.load();
+                Stage currentStage = (Stage) canvasContainer.getScene().getWindow();
+                currentStage.setScene(new Scene(useCaseRoot));
+                currentStage.setTitle("Use Case Diagram");
+            } catch (IOException e) {
+                e.printStackTrace();
+                showError("Failed to load Use Case Diagram: " + e.getMessage());
+            }
+        }
+    }
+    @FXML
+    private void loadClassDiagram() {
+        Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION, "Switch to Class Diagram? Unsaved changes will be lost.", ButtonType.YES, ButtonType.NO);
+        confirmation.setTitle("Confirm Switch");
+        confirmation.setHeaderText(null);
+
+        Optional<ButtonType> result = confirmation.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.YES) {
+            try {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/pscd/class_diagram.fxml"));
+                Parent classDiagramRoot = loader.load();
+                Stage currentStage = (Stage) canvasContainer.getScene().getWindow();
+                currentStage.setScene(new Scene(classDiagramRoot));
+                currentStage.setTitle("Class Diagram");
+            } catch (IOException e) {
+                e.printStackTrace();
+                showError("Failed to load Class Diagram: " + e.getMessage());
+            }
+        }
+    }
+
 
     private void handleExtendButtonClick(GraphicsContext gc) {
         if (activeButton == extendButton) {
