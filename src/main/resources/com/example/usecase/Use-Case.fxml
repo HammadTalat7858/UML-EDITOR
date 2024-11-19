@@ -49,7 +49,7 @@
                     <Button fx:id="actorButton" onAction="#initialize" style="-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;" text="Actor" />
                     <Button fx:id="associationButton" onAction="#initialize" style="-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;" text="Association" />
                     <Button fx:id="useCaseButton" onAction="#initialize" style="-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;" text="Use case" />
-                    <Button fx:id="compositionButton" style="-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;" text="Use Case Subject" />
+                    <Button fx:id="subjectButton" onAction="#initialize" style="-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;" text="Use Case Subject" />
                 </VBox>
             </left>
             <right>
@@ -57,7 +57,7 @@
                     <Label style="-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: white;" text="PROPERTIES" />
 
                     <!-- Include Button -->
-                    <Button fx:id="includeButton" style="-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;" text="Include" />
+                    <Button fx:id="includeButton" onAction="#initialize" style="-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;" text="Include" />
 
                     <!-- Extend Button -->
                     <Button fx:id="extendButton" style="-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;" text="Extend" />
