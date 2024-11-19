@@ -24,8 +24,8 @@
                                         <MenuItem fx:id="pngMenuItem" mnemonicParsing="false" onAction="#exportAsPNG" text="PNG" />
                                     </items>
                                 </Menu>
-                                <MenuItem fx:id="SaveAs" mnemonicParsing="false" text="Save As..." />
-                                <MenuItem fx:id="Load" mnemonicParsing="false" text="Load" />
+                                <MenuItem fx:id="SaveAs" mnemonicParsing="false" onAction="#saveDiagramToFile" text="Save As..." />
+                                <MenuItem fx:id="Load" mnemonicParsing="false" onAction="#loadDiagramFromFile" text="Load" />
                                 <MenuItem mnemonicParsing="false" text="Close" />
                             </items>
                         </Menu>

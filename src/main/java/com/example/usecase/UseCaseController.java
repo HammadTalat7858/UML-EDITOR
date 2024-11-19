@@ -83,6 +83,11 @@ public class UseCaseController {
     private boolean isDrawingExtend = false;
     @FXML
     private Button deleteButton;
+    @FXML
+    private MenuItem SaveAs;
+
+    @FXML
+    private MenuItem Load;
 
 
     @FXML
@@ -308,6 +313,63 @@ public class UseCaseController {
 
         // Redraw the canvas to reflect deletions
         redrawCanvas(gc);
+    }
+    @FXML
+    private void loadDiagramFromFile() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Load Diagram");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Diagram Files", "*.diagram"));
+        File file = fileChooser.showOpenDialog(canvasContainer.getScene().getWindow());
+
+        if (file != null) {
+            try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
+                // Load actors, use cases, subjects, and connections from file
+                actors = (ArrayList<Actor>) ois.readObject();
+                useCases = (ArrayList<UseCase>) ois.readObject();
+                subjects = (ArrayList<UseCaseSubject>) ois.readObject();
+                associations = (ArrayList<LineConnection>) ois.readObject();
+
+                // Redraw the canvas with the loaded data
+                GraphicsContext gc = ((Canvas) canvasContainer.getChildren().get(0)).getGraphicsContext2D();
+                gc.clearRect(0, 0, canvasContainer.getWidth(), canvasContainer.getHeight());
+                redrawCanvas(gc);
+
+                showInfo("Diagram loaded successfully from " + file.getName());
+            } catch (IOException | ClassNotFoundException e) {
+                e.printStackTrace();
+                showError("Error loading diagram: " + e.getMessage());
+            }
+        }
+    }
+
+    @FXML
+    private void saveDiagramToFile() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Save Diagram");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Diagram Files", "*.diagram"));
+        File file = fileChooser.showSaveDialog(canvasContainer.getScene().getWindow());
+
+        if (file != null) {
+            try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
+                // Save actors, use cases, subjects, and connections to file
+                oos.writeObject(new ArrayList<>(actors));
+                oos.writeObject(new ArrayList<>(useCases));
+                oos.writeObject(new ArrayList<>(subjects));
+                oos.writeObject(new ArrayList<>(associations));
+
+                showInfo("Diagram saved successfully to " + file.getName());
+            } catch (IOException e) {
+                e.printStackTrace();
+                showError("Error saving diagram: " + e.getMessage());
+            }
+        }
+    }
+    private void showInfo(String message) {
+        javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.INFORMATION);
+        alert.setTitle("Information");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 
 
@@ -1425,7 +1487,7 @@ public class UseCaseController {
         }
     }
     // LineConnection class to store associations
-    private static class LineConnection {
+    private static class LineConnection implements Serializable {
         private Object startElement; // Actor or UseCase
         private Object endElement;   // Actor or UseCase
         private int startConnectionIndex;
@@ -1463,7 +1525,7 @@ public class UseCaseController {
         }
     }
 
-    private static class UseCaseSubject {
+    private static class UseCaseSubject implements Serializable {
         private double x, y; // Top-left corner
         private double width, height;
         private static int count = 0; // Counter for unique subject names
