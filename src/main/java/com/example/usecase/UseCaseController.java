@@ -1,31 +1,30 @@
 package com.example.usecase;
-import javafx.animation.Animation;
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
-import javafx.event.ActionEvent;
+
 import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
-import javafx.scene.shape.Ellipse;
-import javafx.scene.shape.Line;
 import javafx.scene.text.Font;
-import javafx.scene.text.Text;
-import javafx.scene.transform.Scale;
-import javafx.util.Duration;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+
+import javafx.scene.image.PixelReader;
+import javafx.scene.image.WritableImage;
+import javafx.stage.FileChooser;
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.*;
+
 public class UseCaseController {
 
     @FXML
@@ -37,6 +36,11 @@ public class UseCaseController {
 
     @FXML
     private VBox propertiesPanel;
+    @FXML
+    private MenuItem jpegMenuItem;
+
+    @FXML
+    private MenuItem pngMenuItem;
 
     private Button activeButton;
 
@@ -123,7 +127,8 @@ public class UseCaseController {
 
         // Initial grid drawing
         drawGrid(gc);
-
+        jpegMenuItem.setOnAction(event -> exportAsJPEG());
+        pngMenuItem.setOnAction(event -> exportAsPNG());
         // Set up event listeners for actor creation
         actorButton.setOnAction(event -> handleActorButtonClick(gc));
         canvas.setOnMouseClicked(event -> {
@@ -168,6 +173,7 @@ public class UseCaseController {
             gc.strokeLine(0, y, canvasWidth, y);
         }
     }
+
     private void handleExtendButtonClick(GraphicsContext gc) {
         if (activeButton == extendButton) {
             deselectActiveButton();
@@ -176,6 +182,87 @@ public class UseCaseController {
             activateButton(extendButton);
         }
     }
+    @FXML
+    private void exportAsJPEG() {
+        saveCanvasToFile("jpeg");
+    }
+
+    @FXML
+    private void exportAsPNG() {
+        saveCanvasToFile("png");
+    }
+
+    private void saveCanvasToFile(String format) {
+        Canvas canvas = (Canvas) canvasContainer.getChildren().get(0);
+
+        // Take a snapshot of the canvas
+        WritableImage writableImage = new WritableImage((int) canvas.getWidth(), (int) canvas.getHeight());
+        canvas.snapshot(null, writableImage);
+
+        // Open a file chooser to save the file
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Save Diagram as " + format.toUpperCase());
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(format.toUpperCase() + " Files", "*." + format));
+        File file = fileChooser.showSaveDialog(canvasContainer.getScene().getWindow());
+
+        if (file != null) {
+            System.out.println("Saving to file: " + file.getAbsolutePath());
+            try {
+                // Convert WritableImage to BufferedImage
+                BufferedImage bufferedImage = convertToBufferedImage(writableImage);
+
+                // Handle JPEG alpha channel issue
+                if ("jpeg".equalsIgnoreCase(format)) {
+                    bufferedImage = removeAlphaChannel(bufferedImage);
+                }
+
+                // Save the image to the file
+                boolean result = ImageIO.write(bufferedImage, format, file);
+                if (!result) {
+                    System.err.println("ImageIO.write() failed for format: " + format);
+                } else {
+                    System.out.println("Image successfully saved to: " + file.getAbsolutePath());
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+                showError("Error saving file: " + e.getMessage());
+            }
+        } else {
+            System.err.println("File selection cancelled.");
+        }
+    }
+
+    private BufferedImage convertToBufferedImage(WritableImage writableImage) {
+        int width = (int) writableImage.getWidth();
+        int height = (int) writableImage.getHeight();
+
+        BufferedImage bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+
+        PixelReader pixelReader = writableImage.getPixelReader();
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int argb = pixelReader.getArgb(x, y);
+                bufferedImage.setRGB(x, y, argb);
+            }
+        }
+
+        return bufferedImage;
+    }
+
+    private BufferedImage removeAlphaChannel(BufferedImage originalImage) {
+        BufferedImage rgbImage = new BufferedImage(
+                originalImage.getWidth(),
+                originalImage.getHeight(),
+                BufferedImage.TYPE_INT_RGB);
+
+        Graphics2D graphics = rgbImage.createGraphics();
+        graphics.drawImage(originalImage, 0, 0, java.awt.Color.WHITE, null); // Use white as the background color
+        graphics.dispose();
+        return rgbImage;
+    }
+
+
+
 
     private void deselectActiveElement(GraphicsContext gc) {
         // Reset selected elements

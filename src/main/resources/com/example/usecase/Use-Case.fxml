@@ -20,8 +20,8 @@
                             <items>
                                 <Menu text="Export Diagram As">
                                     <items>
-                                        <MenuItem fx:id="jpegMenuItem" mnemonicParsing="false" text="JPEG" />
-                                        <MenuItem fx:id="pngMenuItem" mnemonicParsing="false" text="PNG" />
+                                        <MenuItem fx:id="jpegMenuItem" mnemonicParsing="false" onAction="#exportAsJPEG" text="JPEG" />
+                                        <MenuItem fx:id="pngMenuItem" mnemonicParsing="false" onAction="#exportAsPNG" text="PNG" />
                                     </items>
                                 </Menu>
                                 <MenuItem fx:id="SaveAs" mnemonicParsing="false" text="Save As..." />
