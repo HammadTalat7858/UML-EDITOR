@@ -50,6 +50,8 @@ public class UseCaseController {
     // List to store all created use cases
     private List<UseCase> useCases = new ArrayList<>();
     private UseCase selectedUseCase = null;
+    private LineConnection selectedLine = null;
+
     @FXML
     private Button associationButton;
     @FXML
@@ -71,6 +73,13 @@ public class UseCaseController {
 
     // Keep track of whether we are drawing an include relation
     private boolean isDrawingInclude = false;
+    @FXML
+    private Button extendButton;
+
+    private boolean isDrawingExtend = false;
+    @FXML
+    private Button deleteButton;
+
 
     @FXML
     public void initialize() {
@@ -83,12 +92,16 @@ public class UseCaseController {
         canvas.setOnMouseDragged(event -> onMouseDragged(event, gc));
         canvas.setOnMouseReleased(event -> onMouseReleased(event, gc));
 
+
         // Handle actor button clicks
         actorButton.setOnAction(event -> handleActorButtonClick(gc));
         useCaseButton.setOnAction(event -> handleUseCaseButtonClick(gc));
         associationButton.setOnAction(event -> handleAssociationButtonClick());
         subjectButton.setOnAction(actionEvent -> handleSubjectButtonClick(gc));
         includeButton.setOnAction(actionEvent -> handleIncludeButtonClick(gc));
+        extendButton.setOnAction(event -> handleExtendButtonClick(gc));
+        deleteButton.setOnAction(event -> handleDeleteAction(gc));
+
 
 
         // Add listeners to ensure the grid is redrawn when the container size changes
@@ -101,6 +114,12 @@ public class UseCaseController {
             canvas.setHeight(newValue.doubleValue());
             drawGrid(gc);
         });
+        canvasContainer.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.DELETE) {
+                handleDeleteAction(gc);
+            }
+        });
+
 
         // Initial grid drawing
         drawGrid(gc);
@@ -149,6 +168,14 @@ public class UseCaseController {
             gc.strokeLine(0, y, canvasWidth, y);
         }
     }
+    private void handleExtendButtonClick(GraphicsContext gc) {
+        if (activeButton == extendButton) {
+            deselectActiveButton();
+            deselectActiveElement(gc);
+        } else {
+            activateButton(extendButton);
+        }
+    }
 
     private void deselectActiveElement(GraphicsContext gc) {
         // Reset selected elements
@@ -158,6 +185,44 @@ public class UseCaseController {
         // Redraw canvas
         redrawCanvas(gc);
     }
+    private void handleDeleteAction(GraphicsContext gc) {
+        if (selectedLine != null) {
+            // Remove the selected line
+            associations.remove(selectedLine);
+            selectedLine = null; // Clear the selected line
+        } else if (selectedActor != null) {
+            // Remove associated lines
+            associations.removeIf(line -> line.startElement == selectedActor || line.endElement == selectedActor);
+            // Remove the actor
+            actors.remove(selectedActor);
+            selectedActor = null;
+        } else if (selectedUseCase != null) {
+            // Remove associated lines
+            associations.removeIf(line -> line.startElement == selectedUseCase || line.endElement == selectedUseCase);
+            // Remove from the global useCases list
+            useCases.remove(selectedUseCase);
+
+            // Check if the use case is inside a subject and remove it from there as well
+            for (UseCaseSubject subject : subjects) {
+                subject.containedUseCases.remove(selectedUseCase);
+            }
+
+            selectedUseCase = null;
+        } else if (selectedSubject != null) {
+            // Remove all contained use cases and their associated lines
+            for (UseCase useCase : new ArrayList<>(selectedSubject.containedUseCases)) {
+                associations.removeIf(line -> line.startElement == useCase || line.endElement == useCase);
+                useCases.remove(useCase);
+            }
+            // Remove the subject
+            subjects.remove(selectedSubject);
+            selectedSubject = null;
+        }
+
+        // Redraw the canvas to reflect deletions
+        redrawCanvas(gc);
+    }
+
 
     private void handleIncludeButtonClick(GraphicsContext gc) {
         if (activeButton == includeButton) {
@@ -173,16 +238,18 @@ public class UseCaseController {
     private void onMousePressed(MouseEvent event, GraphicsContext gc) {
         double mouseX = event.getX();
         double mouseY = event.getY();
+        // Reset dragging offsets
+        dragOffsetX = 0;
+        dragOffsetY = 0;
 
-        // 1. Handle line drawing logic if the association button is active
+        // 1. Handle Association line drawing
         if (activeButton == associationButton) {
-            // Reset starting variables
             startActor = null;
             startUseCase = null;
             deselectActiveElement(gc);
             startConnectionIndex = -1;
 
-            // Check for snapping to an actor's connection point
+            // Check for actor connection points
             for (Actor actor : actors) {
                 for (int i = 0; i < actor.getConnectionPoints().length; i++) {
                     double[] point = actor.getConnectionPoints()[i];
@@ -190,15 +257,14 @@ public class UseCaseController {
                         startX = point[0];
                         startY = point[1];
                         startActor = actor;
-                        startConnectionIndex = i; // Record the connection point index
+                        startConnectionIndex = i;
                         isDrawingAssociation = true;
-
-                        return; // Exit early once a valid connection point is found
+                        return;
                     }
                 }
             }
 
-            // Check for snapping to a use case's connection point
+            // Check for use case connection points
             for (UseCase useCase : useCases) {
                 for (int i = 0; i < useCase.getConnectionPoints().length; i++) {
                     double[] point = useCase.getConnectionPoints()[i];
@@ -206,9 +272,9 @@ public class UseCaseController {
                         startX = point[0];
                         startY = point[1];
                         startUseCase = useCase;
-                        startConnectionIndex = i; // Record the connection point index
+                        startConnectionIndex = i;
                         isDrawingAssociation = true;
-                        return; // Exit early once a valid connection point is found
+                        return;
                     }
                 }
             }
@@ -217,14 +283,14 @@ public class UseCaseController {
             return;
         }
 
-        if (activeButton == includeButton) {
-            // Reset starting variables
+        // 2. Handle Include line drawing
+       else if (activeButton == includeButton) {
             startActor = null;
             startUseCase = null;
             deselectActiveElement(gc);
             startConnectionIndex = -1;
 
-            // Check for snapping to a UseCase connection point
+            // Check for UseCase connection points
             for (UseCase useCase : useCases) {
                 for (int i = 0; i < useCase.getConnectionPoints().length; i++) {
                     double[] point = useCase.getConnectionPoints()[i];
@@ -232,14 +298,14 @@ public class UseCaseController {
                         startX = point[0];
                         startY = point[1];
                         startUseCase = useCase;
-                        startConnectionIndex = i; // Record the connection point index
+                        startConnectionIndex = i;
                         isDrawingInclude = true;
-                        return; // Exit once a valid connection point is found
+                        return;
                     }
                 }
             }
 
-            // Check for snapping to an Actor connection point
+            // Check for Actor connection points
             for (Actor actor : actors) {
                 for (int i = 0; i < actor.getConnectionPoints().length; i++) {
                     double[] point = actor.getConnectionPoints()[i];
@@ -247,9 +313,9 @@ public class UseCaseController {
                         startX = point[0];
                         startY = point[1];
                         startActor = actor;
-                        startConnectionIndex = i; // Record the connection point index
+                        startConnectionIndex = i;
                         isDrawingInclude = true;
-                        return; // Exit once a valid connection point is found
+                        return;
                     }
                 }
             }
@@ -258,16 +324,55 @@ public class UseCaseController {
             return;
         }
 
+        // 3. Handle Extend line drawing
+       else if (activeButton == extendButton) {
+            startActor = null; // Extend lines cannot connect to actors
+            startUseCase = null;
+            deselectActiveElement(gc);
+            startConnectionIndex = -1;
 
-        // 2. Check for items inside subjects (UseCases or Actors)
+            // Check for UseCase connection points only
+            for (UseCase useCase : useCases) {
+                for (int i = 0; i < useCase.getConnectionPoints().length; i++) {
+                    double[] point = useCase.getConnectionPoints()[i];
+                    if (isNear(mouseX, mouseY, point[0], point[1])) {
+                        startX = point[0];
+                        startY = point[1];
+                        startUseCase = useCase;
+                        startConnectionIndex = i;
+                        isDrawingExtend = true;
+                        return;
+                    }
+                }
+            }
+            for (Actor actor : actors) {
+                for (int i = 0; i < actor.getConnectionPoints().length; i++) {
+                    double[] point = actor.getConnectionPoints()[i];
+                    if (isNear(mouseX, mouseY, point[0], point[1])) {
+                        startX = point[0];
+                        startY = point[1];
+                        startActor = actor;
+                        startConnectionIndex = i;
+                        isDrawingExtend = true;
+                        return;
+                    }
+                }
+            }
+
+            showError("Start an extend line from a valid use case connection point.");
+            return;
+        }
+
+        // 4. Check for items inside subjects (UseCases or Actors)
         for (UseCaseSubject subject : subjects) {
             if (subject.isMouseOver(mouseX, mouseY)) {
-                // Check for use cases inside this subject
+                // Check for UseCases inside this subject
                 for (UseCase useCase : useCases) {
                     if (subject.contains(useCase.getX(), useCase.getY()) && isMouseOverUseCase(mouseX, mouseY, useCase)) {
                         selectedUseCase = useCase;
                         selectedActor = null;
                         selectedSubject = null;
+                        selectedLine = null;
 
                         // Handle double-click for editing text
                         if (event.getClickCount() == 2) {
@@ -292,6 +397,8 @@ public class UseCaseController {
                         selectedActor = actor;
                         selectedUseCase = null;
                         selectedSubject = null;
+                        selectedLine = null;
+
 
                         // Handle double-click for editing text
                         if (event.getClickCount() == 2) {
@@ -311,11 +418,24 @@ public class UseCaseController {
                 }
             }
         }
+        for (LineConnection line : associations) {
+            if (isMouseNearLine(mouseX, mouseY, line)) {
+                selectedLine = line; // Set the clicked line as selected
+                selectedActor = null;
+                selectedUseCase = null;
+                selectedSubject = null;
+                redrawCanvas(gc); // Highlight the selected line
+                return;
+            }
+        }
 
-        // 3. Handle resizing logic for subjects
+        // 5. Handle resizing logic for subjects
         for (UseCaseSubject subject : subjects) {
             if (subject.isMouseOverBorder(mouseX, mouseY)) {
                 selectedSubject = subject;
+                selectedActor=null;
+                selectedUseCase=null;
+                selectedLine=null;
                 isResizingSubject = true;
 
                 // Set resize offsets
@@ -325,10 +445,13 @@ public class UseCaseController {
             }
         }
 
-        // 4. Handle subject dragging
+        // 6. Handle subject dragging
         for (UseCaseSubject subject : subjects) {
             if (subject.isMouseOver(mouseX, mouseY)) {
                 selectedSubject = subject;
+                selectedActor=null;
+                selectedUseCase=null;
+                selectedLine=null;
                 isResizingSubject = false;
 
                 // Handle double-click for editing heading
@@ -348,12 +471,14 @@ public class UseCaseController {
             }
         }
 
-        // 5. Handle actor selection logic
+        // 7. Handle actor selection logic
         for (Actor actor : actors) {
             if (isMouseOverActor(mouseX, mouseY, actor)) {
                 selectedActor = actor;
-                selectedUseCase = null; // Deselect any selected use case
-                selectedSubject = null; // Deselect any selected subject
+                selectedUseCase = null;
+                selectedSubject = null;
+                selectedLine = null;
+
 
                 // Handle double-click for editing text
                 if (event.getClickCount() == 2) {
@@ -361,7 +486,7 @@ public class UseCaseController {
                     return;
                 }
 
-                // Calculate drag offset
+                // Calculate drag offsets
                 dragOffsetX = mouseX - actor.getX();
                 dragOffsetY = mouseY - actor.getY();
 
@@ -372,12 +497,14 @@ public class UseCaseController {
             }
         }
 
-        // 6. Handle use case selection logic
+        // 8. Handle UseCase selection logic
         for (UseCase useCase : useCases) {
             if (isMouseOverUseCase(mouseX, mouseY, useCase)) {
                 selectedUseCase = useCase;
-                selectedActor = null; // Deselect any selected actor
-                selectedSubject = null; // Deselect any selected subject
+                selectedActor = null;
+                selectedSubject = null;
+                selectedLine = null;
+
 
                 // Handle double-click for editing text
                 if (event.getClickCount() == 2) {
@@ -392,12 +519,25 @@ public class UseCaseController {
             }
         }
 
-        // 7. If nothing is clicked, deselect everything
+        // 9. If nothing is clicked, deselect everything
         selectedActor = null;
         selectedUseCase = null;
         selectedSubject = null;
+        selectedLine=null;
         redrawCanvas(gc);
     }
+    private boolean isMouseNearLine(double mouseX, double mouseY, LineConnection line) {
+        double[] start = line.getStartPoint();
+        double[] end = line.getEndPoint();
+
+        // Calculate the distance from the mouse point to the line
+        double distance = Math.abs((end[1] - start[1]) * mouseX - (end[0] - start[0]) * mouseY + end[0] * start[1] - end[1] * start[0])
+                / Math.sqrt(Math.pow(end[1] - start[1], 2) + Math.pow(end[0] - start[0], 2));
+
+        double tolerance = 5.0; // Allowable distance to consider a click on the line
+        return distance <= tolerance;
+    }
+
 
     private void editSubjectHeading(UseCaseSubject subject, GraphicsContext gc) {
         // Create a TextField for editing the subject's name
@@ -614,6 +754,7 @@ public class UseCaseController {
         double mouseX = event.getX();
         double mouseY = event.getY();
 
+        // Handle Association Line Preview
         if (activeButton == associationButton && isDrawingAssociation) {
             // Clear the canvas and redraw all elements except the association
             gc.clearRect(0, 0, canvasContainer.getWidth(), canvasContainer.getHeight());
@@ -624,7 +765,10 @@ public class UseCaseController {
             gc.setLineWidth(1);
             gc.strokeLine(startX, startY, mouseX, mouseY);
             return;
-        } else if (activeButton == includeButton && isDrawingInclude) {
+        }
+
+        // Handle Include Line Preview
+        else if (activeButton == includeButton && isDrawingInclude) {
             gc.clearRect(0, 0, canvasContainer.getWidth(), canvasContainer.getHeight());
             redrawCanvas(gc); // Redraw other elements
 
@@ -637,6 +781,19 @@ public class UseCaseController {
             return;
         }
 
+        // Handle Extend Line Preview
+        else if (activeButton == extendButton && isDrawingExtend) {
+            gc.clearRect(0, 0, canvasContainer.getWidth(), canvasContainer.getHeight());
+            redrawCanvas(gc); // Redraw other elements
+
+            // Draw the temporary dotted line with a distinct style for extend
+            gc.setLineDashes(5); // Set dotted style
+            gc.setStroke(Color.DARKBLUE); // Use a distinct color for extend
+            gc.setLineWidth(1);
+            gc.strokeLine(startX, startY, mouseX, mouseY);
+            gc.setLineDashes(0); // Reset to solid lines
+            return;
+        }
 
         // Dragging a UseCaseSubject
         else if (selectedSubject != null && !isResizingSubject) {
@@ -668,9 +825,6 @@ public class UseCaseController {
             return;
         }
 
-        // Preview association line if drawing
-
-
         // Handle dragging other elements (e.g., actors, use cases, etc.)
         if (selectedActor != null) {
             double newX = Math.max(20, Math.min(mouseX - dragOffsetX, canvasContainer.getWidth() - 20));
@@ -694,6 +848,7 @@ public class UseCaseController {
             highlightUseCase(gc, selectedUseCase);
         }
     }
+
 
     private void drawArrow(GraphicsContext gc, double[] start, double[] end) {
         double arrowLength = 15; // Length of the arrowhead
@@ -824,8 +979,61 @@ public class UseCaseController {
             isDrawingInclude = false; // Reset include line drawing state
             redrawCanvas(gc);
         }
-    // Finalize resizing of UseCaseSubject
-       else if (selectedSubject != null && isResizingSubject) {
+
+        // Handle Extend Line
+        else if (activeButton == extendButton && isDrawingExtend) {
+            boolean validConnection = false;
+
+            // Check for snapping to an actor's connection point
+            for (Actor actor : actors) {
+                for (int i = 0; i < actor.getConnectionPoints().length; i++) {
+                    double[] point = actor.getConnectionPoints()[i];
+                    if (isNear(mouseX, mouseY, point[0], point[1])) {
+                        // Create a solid association line
+                        associations.add(new LineConnection(
+                                startActor != null ? startActor : startUseCase, // Start element
+                                startConnectionIndex,                          // Start connection point
+                                actor,                                         // End element
+                                i,                                             // End connection point index
+                                "extend"                                  // Line type
+                        ));
+                        validConnection = true;
+                        break;
+                    }
+                }
+            }
+
+            // Check for snapping to a use case's connection point
+            if (!validConnection) {
+                for (UseCase useCase : useCases) {
+                    for (int i = 0; i < useCase.getConnectionPoints().length; i++) {
+                        double[] point = useCase.getConnectionPoints()[i];
+                        if (isNear(mouseX, mouseY, point[0], point[1])) {
+                            // Create a solid association line
+                            associations.add(new LineConnection(
+                                    startActor != null ? startActor : startUseCase, // Start element
+                                    startConnectionIndex,                          // Start connection point
+                                    useCase,                                       // End element
+                                    i,                                             // End connection point index
+                                    "extend"                                  // Line type
+                            ));
+                            validConnection = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (!validConnection) {
+                showError("Cannot draw extend line. No valid connection point reached.");
+            }
+
+            isDrawingExtend = false; // Reset association line drawing state
+            redrawCanvas(gc);
+        }
+
+        // Finalize resizing of UseCaseSubject
+        else if (selectedSubject != null && isResizingSubject) {
             isResizingSubject = false;
             redrawCanvas(gc);
             highlightUseCaseSubject(gc, selectedSubject);
@@ -843,17 +1051,13 @@ public class UseCaseController {
             redrawCanvas(gc);
             highlightUseCase(gc, selectedUseCase);
         }
-
-        // Finalize association line
-
     }
-
-
 
 // --- Drawing and Helper Methods ---
 
     private void redrawCanvas(GraphicsContext gc) {
         // Clear the canvas and redraw the grid
+        gc.clearRect(0, 0, canvasContainer.getWidth(), canvasContainer.getHeight());
         drawGrid(gc);
 
         // Draw subjects first (background elements)
@@ -880,9 +1084,15 @@ public class UseCaseController {
         for (LineConnection line : associations) {
             drawAssociationLine(gc, line);
         }
+        if (selectedLine != null) {
+            gc.setStroke(Color.BLUE);
+            gc.setLineWidth(3);
+            double[] start = selectedLine.getStartPoint();
+            double[] end = selectedLine.getEndPoint();
+            gc.strokeLine(start[0], start[1], end[0], end[1]);
+        }
     }
 
-    // Helper method to check if a use case is part of a subject
     private boolean isUseCaseInSubject(UseCase useCase) {
         for (UseCaseSubject subject : subjects) {
             if (subject.containedUseCases.contains(useCase)) {
@@ -898,7 +1108,11 @@ public class UseCaseController {
 
         if ("include".equals(line.getType())) {
             gc.setLineDashes(5); // Dotted line for <<include>>
-        } else {
+        }
+       else if ("extend".equals(line.getType())) {
+            gc.setLineDashes(5); // Dotted line for <<extend>>
+        }
+        else {
             gc.setLineDashes(0); // Solid line for association
         }
 
@@ -916,6 +1130,17 @@ public class UseCaseController {
             gc.fillText("<<include>>", midX, midY - 5);
 
             // Draw arrow for <<include>>
+            drawArrow(gc, start, end);
+        }
+        else if ("extend".equals(line.getType())) {
+            // Draw <<extend>> label
+            double midX = (start[0] + end[0]) / 2;
+            double midY = (start[1] + end[1]) / 2;
+            gc.setFill(Color.BLACK);
+            gc.setFont(Font.font("Arial", 12));
+            gc.fillText("<<extend>>", midX, midY - 5);
+
+            // Draw arrow for <<extend>>
             drawArrow(gc, start, end);
         }
     }
@@ -977,6 +1202,7 @@ public class UseCaseController {
         associationButton.setStyle("-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;");
         subjectButton.setStyle("-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;");
         includeButton.setStyle("-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;");
+        extendButton.setStyle("-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;");
         // Add other buttons here if necessary
     }
 
