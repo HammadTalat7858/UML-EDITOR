@@ -1,4 +1,4 @@
-package com.example.usecase;
+package com.example.UseCaseDiagram;
 
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -203,7 +203,7 @@ public class UseCaseController {
         Optional<ButtonType> result = confirmation.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.YES) {
             try {
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/usecase/Use-Case.fxml"));
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/UseCaseDiagram/Use-Case.fxml"));
                 Parent useCaseRoot = loader.load();
                 Stage currentStage = (Stage) canvasContainer.getScene().getWindow();
                 currentStage.setScene(new Scene(useCaseRoot));
@@ -223,7 +223,7 @@ public class UseCaseController {
         Optional<ButtonType> result = confirmation.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.YES) {
             try {
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/pscd/class_diagram.fxml"));
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/ClassDiagram/class_diagram.fxml"));
                 Parent classDiagramRoot = loader.load();
                 Stage currentStage = (Stage) canvasContainer.getScene().getWindow();
                 currentStage.setScene(new Scene(classDiagramRoot));

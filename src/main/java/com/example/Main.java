@@ -11,7 +11,7 @@ import java.io.IOException;
 public class Main extends Application {
     @Override
     public void start(Stage stage) throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(com.example.pscd.Main.class.getResource("class_diagram.fxml"));
+        FXMLLoader fxmlLoader = new FXMLLoader(com.example.ClassDiagram.Main.class.getResource("class_diagram.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
         stage.setTitle("UML-EDITOR");
         stage.setScene(scene);

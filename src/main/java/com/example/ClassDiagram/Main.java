@@ -1,4 +1,4 @@
-package com.example.pscd;
+package com.example.ClassDiagram;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;

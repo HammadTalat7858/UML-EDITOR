@@ -1,4 +1,4 @@
-package com.example.usecase;
+package com.example.UseCaseDiagram;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;

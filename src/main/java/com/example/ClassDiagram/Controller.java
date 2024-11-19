@@ -1,4 +1,4 @@
-package com.example.pscd;
+package com.example.ClassDiagram;
 
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -27,15 +27,12 @@ import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
-import javax.swing.SwingUtilities;
 import javax.imageio.ImageIO;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.*;
 import java.util.List;
-import javax.swing.*;
 
 public class Controller {
 
@@ -204,7 +201,7 @@ public class Controller {
         Optional<ButtonType> result = confirmation.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.YES) {
             try {
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/usecase/Use-Case.fxml"));
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/UseCaseDiagram/Use-Case.fxml"));
                 Parent useCaseRoot = loader.load();
                 Stage currentStage = (Stage) canvasContainer.getScene().getWindow();
                 currentStage.setScene(new Scene(useCaseRoot));
@@ -224,7 +221,7 @@ public class Controller {
         Optional<ButtonType> result = confirmation.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.YES) {
             try {
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/pscd/class_diagram.fxml"));
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/ClassDiagram/class_diagram.fxml"));
                 Parent classDiagramRoot = loader.load();
                 Stage currentStage = (Stage) canvasContainer.getScene().getWindow();
                 currentStage.setScene(new Scene(classDiagramRoot));
