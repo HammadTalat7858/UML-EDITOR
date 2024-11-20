@@ -127,6 +127,13 @@ public class UseCaseController {
         extendButton.setOnAction(event -> handleExtendButtonClick(gc));
         deleteButton.setOnAction(event -> handleDeleteAction(gc));
 
+        canvasContainer.setFocusTraversable(true); // Make it focusable
+        canvasContainer.requestFocus();           // Request focus immediately
+
+        canvasContainer.setOnMouseClicked(event -> {
+            canvasContainer.requestFocus();
+        });
+
 
 
         // Add listeners to ensure the grid is redrawn when the container size changes
@@ -377,12 +384,7 @@ public class UseCaseController {
 
             selectedUseCase = null;
         } else if (selectedSubject != null) {
-            // Remove all contained use cases and their associated lines
-            for (UseCase useCase : new ArrayList<>(selectedSubject.containedUseCases)) {
-                associations.removeIf(line -> line.startElement == useCase || line.endElement == useCase);
-                useCases.remove(useCase);
-            }
-            // Remove the subject
+
             subjects.remove(selectedSubject);
             selectedSubject = null;
         }
@@ -767,9 +769,19 @@ public class UseCaseController {
     private void editSubjectHeading(UseCaseSubject subject, GraphicsContext gc) {
         // Create a TextField for editing the subject's name
         TextField textField = new TextField(subject.name);
-        textField.setLayoutX(subject.x + 10); // Align with the heading's X position
-        textField.setLayoutY(subject.y + 5); // Slightly above the heading for better appearance
-        textField.setPrefWidth(subject.width - 20); // Constrain to the rectangle's width with margin
+
+        // Use a Text object to calculate the width of the current text
+        javafx.scene.text.Text textHelper = new javafx.scene.text.Text(subject.name);
+        textHelper.setFont(Font.font("Arial", 14)); // Match the drawing font
+        double textWidth = textHelper.getBoundsInLocal().getWidth();
+
+        // Center the TextField horizontally and align it with the top heading position
+        textField.setPrefWidth(subject.width - 20); // Constrain to the subject width
+        double textFieldX = subject.x + (subject.width / 2) - (textField.getPrefWidth() / 2);
+        double textFieldY = subject.y + 10; // Slightly below the top edge for alignment
+
+        textField.setLayoutX(textFieldX);
+        textField.setLayoutY(textFieldY);
         textField.setStyle("-fx-border-color: lightblue; -fx-font-size: 14px;");
 
         // Add the TextField to the canvas container
@@ -817,18 +829,28 @@ public class UseCaseController {
     }
 
     private void drawUseCaseSubject(GraphicsContext gc, UseCaseSubject subject) {
+        // Draw the rectangle for the subject
         gc.setFill(Color.WHITE);
         gc.fillRect(subject.x, subject.y, subject.width, subject.height);
         gc.setStroke(Color.BLACK);
         gc.setLineWidth(2);
         gc.strokeRect(subject.x, subject.y, subject.width, subject.height);
 
-        // Draw the subject's name
+        // Calculate the position for horizontally centered, top-aligned text
         gc.setFill(Color.BLACK);
         gc.setFont(Font.font("Arial", 14));
-        gc.fillText(subject.name, subject.x + 10, subject.y + 20);
 
+        javafx.scene.text.Text textHelper = new javafx.scene.text.Text(subject.name);
+        textHelper.setFont(gc.getFont());
+        double textWidth = textHelper.getBoundsInLocal().getWidth();
+
+        double textX = subject.x + (subject.width / 2) - (textWidth / 2); // Center horizontally
+        double textY = subject.y + 20; // Position slightly below the top edge
+
+        // Draw the subject's name
+        gc.fillText(subject.name, textX, textY);
     }
+
 
     private void highlightUseCaseSubject(GraphicsContext gc, UseCaseSubject subject) {
         gc.setStroke(Color.BLUE);
@@ -910,13 +932,19 @@ public class UseCaseController {
         // Draw use case label
         gc.setFill(Color.BLACK);
         gc.setFont(Font.font("Arial", 12));
-        gc.fillText(useCase.getName(), x - width / 4, y); // Center the text within the oval
+        javafx.scene.text.Text textHelper = new javafx.scene.text.Text(useCase.getName());
+        textHelper.setFont(gc.getFont());
+        double textWidth = textHelper.getBoundsInLocal().getWidth();
+        double textHeight = textHelper.getBoundsInLocal().getHeight();
+
+        gc.fillText(useCase.getName(), x - textWidth / 2, y + textHeight / 4); // Center the text
     }
+
 
     private void editUseCaseText(UseCase useCase, GraphicsContext gc) {
         // Create a TextField for editing the use case name
         TextField textField = new TextField(useCase.getName());
-        textField.setLayoutX(useCase.getX() - 50); // Center horizontally
+        textField.setLayoutX(useCase.getX() - useCase.getWidth() / 2 + 10); // Center horizontally
         textField.setLayoutY(useCase.getY() - 10); // Center vertically
         textField.setPrefWidth(100);
         textField.setStyle("-fx-border-color: lightblue; -fx-font-size: 12px;");
@@ -928,7 +956,7 @@ public class UseCaseController {
         // Commit changes on Enter key press
         textField.setOnKeyPressed(keyEvent -> {
             if (keyEvent.getCode() == KeyCode.ENTER) {
-                useCase.setName(textField.getText().trim());
+                useCase.setName(textField.getText().trim(), gc);
                 canvasContainer.getChildren().remove(textField);
                 redrawCanvas(gc);
             }
@@ -937,7 +965,7 @@ public class UseCaseController {
         // Commit changes on focus loss
         textField.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal) {
-                useCase.setName(textField.getText().trim());
+                useCase.setName(textField.getText().trim(), gc);
                 canvasContainer.getChildren().remove(textField);
                 redrawCanvas(gc);
             }
@@ -1468,8 +1496,8 @@ public class UseCaseController {
         gc.strokeLine(x, y - 20, x, y); // Body
         gc.strokeLine(x, y, x - 10, y + 20); // Left leg
         gc.strokeLine(x, y, x + 10, y + 20); // Right leg
-        gc.strokeLine(x, y - 15, x - 20, y - 15); // Left arm (lowered below neck)
-        gc.strokeLine(x, y - 15, x + 20, y - 15); // Right arm (lowered below neck)
+        gc.strokeLine(x, y - 15, x - 20, y - 15); // Left arm
+        gc.strokeLine(x, y - 15, x + 20, y - 15); // Right arm
 
         // Draw connection points
         gc.setFill(Color.RED);
@@ -1477,10 +1505,15 @@ public class UseCaseController {
             gc.fillOval(point[0] - 3, point[1] - 3, 6, 6); // Draw small red circles
         }
 
-        // Draw actor label
+        // Draw actor label centered horizontally below the figure
         gc.setFill(Color.BLACK);
         gc.setFont(Font.font("Arial", 12));
-        gc.fillText(actor.getName(), x - 20, y + 40); // Label below the actor
+        javafx.scene.text.Text textHelper = new javafx.scene.text.Text(actor.getName());
+        textHelper.setFont(gc.getFont());
+        double textWidth = textHelper.getBoundsInLocal().getWidth();
+
+        // Position the text centered horizontally relative to the actor figure
+        gc.fillText(actor.getName(), x - textWidth / 2, y + 40); // 40px below the actor's head
     }
     // Actor class for serialization and connection points
     private static class Actor implements Serializable {
@@ -1549,8 +1582,22 @@ public class UseCaseController {
             return name;
         }
 
-        public void setName(String name) {
+        public void setName(String name, GraphicsContext gc) {
             this.name = name;
+            adjustSize(gc);
+        }
+
+        // Adjust the size based on the text dimensions
+        public void adjustSize(GraphicsContext gc) {
+            gc.setFont(Font.font("Arial", 12));
+            javafx.scene.text.Text textHelper = new javafx.scene.text.Text(name);
+            textHelper.setFont(gc.getFont());
+
+            double textWidth = textHelper.getBoundsInLocal().getWidth();
+            double textHeight = textHelper.getBoundsInLocal().getHeight();
+
+            this.width = Math.max(120, textWidth + 20); // Minimum width 120
+            this.height = Math.max(60, textHeight + 20); // Minimum height 60
         }
 
         public double[][] getConnectionPoints() {
@@ -1562,6 +1609,7 @@ public class UseCaseController {
             };
         }
     }
+
     // LineConnection class to store associations
     private static class LineConnection implements Serializable {
         private Object startElement; // Actor or UseCase

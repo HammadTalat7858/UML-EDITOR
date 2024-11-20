@@ -118,6 +118,12 @@ public class Controller {
         // Set up zoom functionality
         scaleTransform = new Scale(1, 1, 0, 0);  // Initialize with no scaling
         canvasContainer.getTransforms().add(scaleTransform);
+        // Make canvasContainer focusable and request focus
+        canvasContainer.setFocusTraversable(true);
+        canvasContainer.requestFocus();
+
+// Request focus when the user clicks on the canvasContainer
+        canvasContainer.setOnMouseClicked(event -> canvasContainer.requestFocus());
 
         // Add event listeners for zooming
         canvasContainer.addEventFilter(ScrollEvent.SCROLL, this::handleZoom);
@@ -128,6 +134,8 @@ public class Controller {
                 newScene.addEventFilter(KeyEvent.KEY_PRESSED, this::handleZoomKeys);
             }
         });
+
+
         canvasContainer.widthProperty().addListener((observable, oldValue, newValue) -> {
             gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
             canvas.setWidth(newValue.doubleValue());
@@ -143,6 +151,29 @@ public class Controller {
             drawGrid(gc);  // Redraw the grid with the new height
             redrawCanvas(gc);  // Redraw class diagrams and connections
         });
+
+        canvasContainer.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            System.out.println("canvasContainer focus: " + newVal);
+        });
+
+        canvas.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            System.out.println("Canvas focus: " + newVal);
+        });
+
+
+        canvasContainer.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene != null) {
+                newScene.setOnKeyPressed(event -> {
+                    if (event.getCode() == KeyCode.DELETE) {
+                        deleteSelectedComponent();
+                    }
+                });
+            }
+        });
+
+
+
+
 
         // Draw the grid once
         drawGrid(gc);
@@ -1328,7 +1359,7 @@ public class Controller {
                 String accessModifier = accessModifierAndNameParts[0];
                 String name = accessModifierAndNameParts[1];
                 String returnType = parts[1].trim();
-                return accessModifier + " " + returnType + " " + name + "() {\n        // TODO: Implement this method\n    }";
+                return accessModifier + " " + returnType + " " + name + " {\n        // TODO: Implement this method\n    }";
             }
         }
         // If the format is invalid, return a comment to indicate the issue
