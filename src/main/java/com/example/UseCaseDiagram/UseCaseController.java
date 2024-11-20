@@ -140,11 +140,13 @@ public class UseCaseController {
         canvasContainer.widthProperty().addListener((observable, oldValue, newValue) -> {
             canvas.setWidth(newValue.doubleValue());
             drawGrid(gc);
+            redrawCanvas(gc);
         });
 
         canvasContainer.heightProperty().addListener((observable, oldValue, newValue) -> {
             canvas.setHeight(newValue.doubleValue());
             drawGrid(gc);
+            redrawCanvas(gc);
         });
         canvasContainer.setOnKeyPressed(event -> {
             if (event.getCode() == KeyCode.DELETE) {
@@ -1338,7 +1340,7 @@ public class UseCaseController {
             drawAssociationLine(gc, line);
         }
         if (selectedLine != null) {
-            gc.setStroke(Color.BLUE);
+            gc.setStroke(Color.web("#5DADE2"));
             gc.setLineWidth(3);
             double[] start = selectedLine.getStartPoint();
             double[] end = selectedLine.getEndPoint();
@@ -1421,11 +1423,20 @@ public class UseCaseController {
     }
     private void deselectActiveButton() {
         if (activeButton != null) {
-            // Reset the active button's style
-            activeButton.setStyle("-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;");
+            // Remove the "tool-button-selected" class and reset it to "tool-button"
+            activeButton.getStyleClass().removeAll("tool-button-selected");
+            if (!activeButton.getStyleClass().contains("tool-button")) {
+                activeButton.getStyleClass().add("tool-button");
+            }
             activeButton = null; // Clear the active button
         }
+
+        // Clear any drawing or selection state
         isDrawingAssociation = false;
+        isDrawingInclude = false;
+        isDrawingExtend = false;
+
+        // Deselect any active elements
         deselectActiveElement(((Canvas) canvasContainer.getChildren().get(0)).getGraphicsContext2D());
     }
 
@@ -1442,22 +1453,31 @@ public class UseCaseController {
 
     // Activate a button (change style and set active)
     private void activateButton(Button button) {
-        // Reset the style of all buttons
+        // Reset styles for all buttons
         resetAllButtonStyles();
 
-        // Set the new button as active and update its style
+        // Add the "tool-button-selected" class to the active button
         activeButton = button;
-        button.setStyle("-fx-background-color: #5DADE2; -fx-text-fill: black; -fx-font-weight: bold;");
+        button.getStyleClass().add("tool-button-selected");
     }
+
+
+
     private void resetAllButtonStyles() {
-        actorButton.setStyle("-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;");
-        useCaseButton.setStyle("-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;");
-        associationButton.setStyle("-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;");
-        subjectButton.setStyle("-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;");
-        includeButton.setStyle("-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;");
-        extendButton.setStyle("-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;");
-        // Add other buttons here if necessary
+        actorButton.getStyleClass().removeAll("tool-button-selected", "tool-button");
+        actorButton.getStyleClass().add("tool-button");
+
+        useCaseButton.getStyleClass().removeAll("tool-button-selected", "tool-button");
+        useCaseButton.getStyleClass().add("tool-button");
+
+        associationButton.getStyleClass().removeAll("tool-button-selected", "tool-button");
+        associationButton.getStyleClass().add("tool-button");
+
+        subjectButton.getStyleClass().removeAll("tool-button-selected", "tool-button");
+        subjectButton.getStyleClass().add("tool-button");
     }
+
+
 
     private void handleAssociationButtonClick() {
         if (activeButton == associationButton) {

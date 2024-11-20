@@ -333,22 +333,35 @@ public class Controller {
     }
 
     private void handleButtonClick(Button clickedButton, List<Button> buttons) {
-        for (Button button : buttons) {
-            button.setStyle("-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;");
+        if (activeButton == clickedButton) {
+            // If the clicked button is already active, deselect it
+            clickedButton.getStyleClass().remove("tool-button-selected");
+            if (!clickedButton.getStyleClass().contains("tool-button")) {
+                clickedButton.getStyleClass().add("tool-button");
+            }
+            activeButton = null; // Clear the active button
+        } else {
+            // Otherwise, deselect all buttons and select the clicked one
+            deselectAllButtons(buttons);
+            clickedButton.getStyleClass().add("tool-button-selected");
+            activeButton = clickedButton; // Update the active button
         }
-
-        // Apply selected style to the clicked button
-        clickedButton.setStyle("-fx-background-color: #5DADE2; -fx-text-fill: black; -fx-font-weight: bold;");
-        activeButton = clickedButton;
-
     }
+
 
     private void deselectAllButtons(List<Button> buttons) {
         for (Button button : buttons) {
-            button.setStyle("-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;");
+            // Remove the "tool-button-selected" style class
+            button.getStyleClass().remove("tool-button-selected");
+
+            // Ensure the default "tool-button" style class is present
+            if (!button.getStyleClass().contains("tool-button")) {
+                button.getStyleClass().add("tool-button");
+            }
         }
-        activeButton = null;
+        activeButton = null; // Clear the active button
     }
+
 
     private void drawGrid(GraphicsContext gc) {
         double canvasWidth = canvasContainer.getWidth();
@@ -564,6 +577,36 @@ public class Controller {
                 redrawCanvas(gc);
                 return;
             }
+            boolean componentSelected = false;
+
+            // Check if a line is clicked
+            for (LineConnection line : lineConnections) {
+                if (isNearLine(event.getX(), event.getY(), line)) {
+                    selectedComponent = line;
+                    componentSelected = true;
+                    break;
+                }
+            }
+
+            // Check if a class diagram is clicked
+            if (!componentSelected) {
+                selectDiagram(event.getX(), event.getY());
+                if (selectedDiagramKey != null) {
+                    selectedComponent = diagrams.get(selectedDiagramKey);
+                    ClassDiagram diagram = diagrams.get(selectedDiagramKey);
+                    offsetX = event.getX() - diagram.x;
+                    offsetY = event.getY() - diagram.y;
+                    componentSelected = true;
+                }
+            }
+
+            // If no component is selected, deselect everything
+            if (!componentSelected) {
+                selectedComponent = null;
+            }
+
+            // Redraw to reflect deselection or selection
+            redrawCanvas(gc);
         }
         else if (activeButton == null) {
 
@@ -614,6 +657,7 @@ public class Controller {
                 }
             }
         }
+
     }
 
     @FXML
@@ -1113,7 +1157,7 @@ public class Controller {
 
             // If selected, highlight the line segments
             if (isSelected) {
-                gc.setStroke(Color.BLUE);
+                gc.setStroke(Color.web("#5DADE2"));
                 gc.setLineWidth(4);
                 for (int i = 0; i < points.size() - 1; i++) {
                     double[] start = points.get(i);
@@ -1170,7 +1214,7 @@ public class Controller {
         yPoints[2] = endY - triangleSize * Math.sin(angle + Math.PI / 6);
 
         // Draw the triangle with highlight if selected
-        gc.setStroke(isSelected ? Color.BLUE : Color.BLACK);
+        gc.setStroke(isSelected ? Color.web("#5DADE2") : Color.BLACK);
         gc.setLineWidth(isSelected ? 3 : 2); // Thicker border if selected
         gc.strokePolygon(xPoints, yPoints, 3); // Hollow triangle
     }
@@ -1258,6 +1302,8 @@ public class Controller {
     // Helper method to draw the diamond
     private void drawDiamond(GraphicsContext gc, double endX, double endY, double startX, double startY, boolean isSelected, boolean filled) {
         double diamondSize = 15; // Size of the diamond
+        Color fillColor = isSelected ? Color.web("#5DADE2") : Color.BLACK; // Use the attribute button color for selected lines
+        Color borderColor = isSelected ? Color.web("#5DADE2"): Color.BLACK; // Use blue for the border if selected
 
         // Calculate the angle of the line
         double angle = Math.atan2(endY - startY, endX - startX);
@@ -1274,15 +1320,16 @@ public class Controller {
         xPoints[3] = endX - diamondSize * Math.cos(angle + Math.PI / 4); // Top-right corner
         yPoints[3] = endY - diamondSize * Math.sin(angle + Math.PI / 4);
 
-        // Draw the diamond with highlight if selected
+        // Draw the diamond
         if (filled) {
-            gc.setFill(isSelected ? Color.BLUE : Color.BLACK);
-            gc.fillPolygon(xPoints, yPoints, 4); // Filled diamond
-        } else {
-            gc.setStroke(isSelected ? Color.BLUE : Color.BLACK);
-            gc.setLineWidth(isSelected ? 3 : 2); // Thicker border if selected
-            gc.strokePolygon(xPoints, yPoints, 4); // Hollow diamond
+            gc.setFill(fillColor); // Fill with the selected color
+            gc.fillPolygon(xPoints, yPoints, 4);
         }
+
+        // Draw the border
+        gc.setStroke(borderColor);
+        gc.setLineWidth(isSelected ? 3 : 2); // Thicker border if selected
+        gc.strokePolygon(xPoints, yPoints, 4);
     }
 
 

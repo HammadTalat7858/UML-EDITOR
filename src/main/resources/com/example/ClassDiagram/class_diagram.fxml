@@ -13,106 +13,117 @@
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.SplitPane?>
 
-<AnchorPane prefHeight="658.0" prefWidth="934.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.ClassDiagram.Controller">
+<AnchorPane prefHeight="800.0" prefWidth="1280.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.ClassDiagram.Controller" stylesheets="@styles.css">
     <children>
-        <BorderPane layoutX="0.0" layoutY="0.0" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="1280.0" style="-fx-border-color: transparent transparent white transparent; -fx-border-width: 0 4 0 4;" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <BorderPane layoutX="0.0" layoutY="0.0" prefHeight="800.0" prefWidth="1280.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
             <top>
                 <MenuBar BorderPane.alignment="CENTER">
                     <menus>
-                        <Menu mnemonicParsing="false" text="File">
+                        <Menu text="File">
                             <items>
                                 <Menu text="Export Diagram As">
                                     <items>
-                                        <MenuItem fx:id="jpegMenuItem" mnemonicParsing="false" onAction="#exportAsJPEG" text="JPEG" />
-                                        <MenuItem fx:id="pngMenuItem" mnemonicParsing="false" onAction="#exportAsPNG" text="PNG" />
+                                        <MenuItem fx:id="jpegMenuItem" onAction="#exportAsJPEG" text="JPEG" />
+                                        <MenuItem fx:id="pngMenuItem" onAction="#exportAsPNG" text="PNG" />
                                     </items>
                                 </Menu>
-                                <MenuItem fx:id="SaveAs" mnemonicParsing="false" onAction="#saveDiagramToFile" text="Save As..." />
-                                <MenuItem fx:id="Load" mnemonicParsing="false" onAction="#loadDiagramFromFile" text="Load" />
-                                <MenuItem fx:id="Close" mnemonicParsing="false" onAction="#handleCloseAction" text="Close" />
+                                <MenuItem fx:id="SaveAs" onAction="#saveDiagramToFile" text="Save As..." />
+                                <MenuItem fx:id="Load" onAction="#loadDiagramFromFile" text="Load" />
+                                <MenuItem fx:id="Close" onAction="#handleCloseAction" text="Close" />
                             </items>
                         </Menu>
-                        <Menu mnemonicParsing="false" text="Model">
+                        <Menu text="Model">
                             <items>
-                                <Menu mnemonicParsing="false" text="Add Diagram">
+                                <Menu text="Add Diagram">
                                     <items>
-                                        <MenuItem fx:id="loadClass" mnemonicParsing="false" onAction="#loadClassDiagram" text="Class Diagram" />
-                                        <MenuItem fx:id="loadusecase" mnemonicParsing="false" onAction="#loadUseCaseDiagram" text="Use Case Diagram" />
+                                        <MenuItem fx:id="loadClass" onAction="#loadClassDiagram" text="Class Diagram" />
+                                        <MenuItem fx:id="loadusecase" onAction="#loadUseCaseDiagram" text="Use Case Diagram" />
                                     </items>
                                 </Menu>
                             </items>
                         </Menu>
-                        <Menu mnemonicParsing="false" text="Tools">
+                        <Menu text="Tools">
                             <items>
-                                <Menu mnemonicParsing="false" text="Generate Code">
+                                <Menu text="Generate Code">
                                     <items>
-                                        <MenuItem fx:id="GenerateCode" mnemonicParsing="false" onAction="#exportToJavaCode" text="JAVA" />
+                                        <MenuItem fx:id="GenerateCode" onAction="#exportToJavaCode" text="JAVA" />
                                     </items>
                                 </Menu>
                             </items>
                         </Menu>
-                        <Menu mnemonicParsing="false" text="View">
+                        <Menu text="View">
                             <items>
-                                <MenuItem mnemonicParsing="false" text="Action 1" />
+                                <MenuItem text="Action 1" />
                             </items>
                         </Menu>
                     </menus>
                 </MenuBar>
             </top>
-            <left>
-                <VBox fx:id="toolboxVBox" alignment="CENTER" prefHeight="700.0" prefWidth="200.0" spacing="20.0" style="-fx-background-color: #000000; -fx-border-color: white; -fx-border-width: 0 4 0 0; -fx-padding: 15;" BorderPane.alignment="CENTER">
-                    <Label style="-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: white;" text="TOOLBOX" />
-                    <Label style="-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: lightgray;" text="Classes (Basic)" />
-                    <Button fx:id="classButton" style="-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;" text="Class" />
-                    <Button fx:id="associationButton" style="-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;" text="Association" />
-                    <Button fx:id="aggregationButton" style="-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;" text="Aggregation" />
-                    <Button fx:id="compositionButton" style="-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;" text="Composition" />
-                    <Button fx:id="InheritanceButton" style="-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;" text="Inheritance" />
-                </VBox>
-            </left>
-            <right>
-                <VBox fx:id="propertiesPanel" alignment="CENTER" prefHeight="700.0" prefWidth="200.0" spacing="20.0" style="-fx-background-color: #000000; -fx-border-color: white; -fx-border-width: 0 0 0 4; -fx-padding: 15;" BorderPane.alignment="CENTER">
-                    <Label style="-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: white;" text="PROPERTIES" />
-
-                    <!-- Attributes Section -->
-                    <VBox alignment="CENTER" spacing="10.0" style="-fx-background-color: #2C3E50; -fx-padding: 15; -fx-border-color: white; -fx-border-width: 2;">
-                        <Label style="-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: lightgray;" text="Attributes" />
-                        <TextField fx:id="attributesField" promptText="Add Attribute" style="-fx-background-color: white; -fx-border-color: gray;" />
-                        <ComboBox fx:id="attributeAccessModifier" promptText="Access Modifier" style="-fx-background-color: white;">
-                            <items>
-                                <FXCollections fx:factory="observableArrayList">
-                                    <String fx:value="public" />
-                                    <String fx:value="private" />
-                                    <String fx:value="protected" />
-                                </FXCollections>
-                            </items>
-                        </ComboBox>
-                        <Button fx:id="addAttributeButton" style="-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;" text="Add Attribute" />
-                    </VBox>
-
-                    <!-- Operations Section -->
-                    <VBox alignment="CENTER" spacing="10.0" style="-fx-background-color: #2C3E50; -fx-padding: 15; -fx-border-color: white; -fx-border-width: 2;">
-                        <Label style="-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: lightgray;" text="Operations" />
-                        <TextField fx:id="operationsField" promptText="Add Operation" style="-fx-background-color: white; -fx-border-color: gray;" />
-                        <ComboBox fx:id="operationAccessModifier" promptText="Access Modifier" style="-fx-background-color: white;">
-                            <items>
-                                <FXCollections fx:factory="observableArrayList">
-                                    <String fx:value="public" />
-                                    <String fx:value="private" />
-                                    <String fx:value="protected" />
-                                </FXCollections>
-                            </items>
-                        </ComboBox>
-                        <Button fx:id="addOperationButton" style="-fx-background-color: #5DADE2; -fx-text-fill: white; -fx-font-weight: bold;" text="Add Operation" />
-                    </VBox>
-
-                    <!-- Generic Delete Button -->
-                    <Button fx:id="deleteButton" style="-fx-background-color: #8B008B; -fx-text-fill: white; -fx-font-size: 14; -fx-font-weight: bold;" text="Delete Selected" />
-                </VBox>
-            </right>
             <center>
-                <Pane fx:id="canvasContainer" prefHeight="633.0" prefWidth="679.0" style="-fx-border-color: lightgray; -fx-border-width: 2;" BorderPane.alignment="CENTER" />
+                <!-- SplitPane for dynamic adjustment -->
+                <SplitPane orientation="HORIZONTAL" dividerPositions="0.2, 0.8" BorderPane.alignment="CENTER">
+                    <!-- Toolbox Panel -->
+                    <VBox fx:id="toolboxVBox" alignment="CENTER" spacing="30.0" styleClass="toolbox-panel">
+                        <Label text="TOOLBOX" styleClass="title-label" />
+                        <Label text="Classes (Basic)" styleClass="section-label" />
+                        <Button fx:id="classButton" text="Class" styleClass="tool-button" />
+                        <Button fx:id="associationButton" text="Association" styleClass="tool-button" />
+                        <Button fx:id="aggregationButton" text="Aggregation" styleClass="tool-button" />
+                        <Button fx:id="compositionButton" text="Composition" styleClass="tool-button" />
+                        <Button fx:id="InheritanceButton" text="Inheritance" styleClass="tool-button" />
+                    </VBox>
+
+                    <!-- Canvas Pane (Center Content) -->
+                    <Pane fx:id="canvasContainer" prefHeight="633.0" prefWidth="679.0" styleClass="canvas-container" />
+
+                    <!-- Properties Panel -->
+                    <VBox fx:id="propertiesPanel" alignment="CENTER" spacing="30.0" styleClass="properties-panel">
+                        <Label text="PROPERTIES" styleClass="title-label" />
+
+                        <!-- Attributes Section -->
+                        <VBox spacing="20.0" styleClass="properties-section" alignment="CENTER">
+                            <Label text="Attributes" styleClass="section-label" />
+                            <TextField fx:id="attributesField" promptText="Add Attribute" />
+                            <ComboBox fx:id="attributeAccessModifier" promptText="Access Modifier">
+                                <items>
+                                    <FXCollections fx:factory="observableArrayList">
+                                        <String fx:value="public" />
+                                        <String fx:value="private" />
+                                        <String fx:value="protected" />
+                                    </FXCollections>
+                                </items>
+                            </ComboBox>
+                            <AnchorPane>
+                                <Button fx:id="addAttributeButton" text="Add Attribute" styleClass="action-button" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" />
+                            </AnchorPane>
+                        </VBox>
+
+                        <!-- Operations Section -->
+                        <VBox spacing="20.0" styleClass="properties-section" alignment="CENTER">
+                            <Label text="Operations" styleClass="section-label" />
+                            <TextField fx:id="operationsField" promptText="Add Operation" />
+                            <ComboBox fx:id="operationAccessModifier" promptText="Access Modifier">
+                                <items>
+                                    <FXCollections fx:factory="observableArrayList">
+                                        <String fx:value="public" />
+                                        <String fx:value="private" />
+                                        <String fx:value="protected" />
+                                    </FXCollections>
+                                </items>
+                            </ComboBox>
+                            <AnchorPane>
+                                <Button fx:id="addOperationButton" text="Add Operation" styleClass="action-button" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" />
+                            </AnchorPane>
+                        </VBox>
+
+                        <!-- Delete Button -->
+                        <AnchorPane>
+                            <Button fx:id="deleteButton" text="Delete Selected" styleClass="delete-button" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" />
+                        </AnchorPane>
+                    </VBox>
+                </SplitPane>
             </center>
         </BorderPane>
     </children>
