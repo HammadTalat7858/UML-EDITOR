@@ -128,11 +128,18 @@ public class UseCaseController {
         deleteButton.setOnAction(event -> handleDeleteAction(gc));
 
         canvasContainer.setFocusTraversable(true); // Make it focusable
-        canvasContainer.requestFocus();           // Request focus immediately
 
         canvasContainer.setOnMouseClicked(event -> {
-            canvasContainer.requestFocus();
+            // Check if a TextField exists
+            boolean hasTextField = canvasContainer.getChildren().stream()
+                    .anyMatch(node -> node instanceof TextField);
+
+            if (!hasTextField) {
+                // Delay focus request to avoid stealing focus during editing
+                Platform.runLater(canvasContainer::requestFocus);
+            }
         });
+
 
 
 
