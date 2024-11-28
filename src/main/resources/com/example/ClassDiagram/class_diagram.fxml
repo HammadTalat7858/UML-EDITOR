@@ -9,6 +9,23 @@
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.TreeView?>
+<?import javafx.scene.control.TreeItem?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.collections.FXCollections?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.TreeItem?>
+<?import javafx.scene.control.TreeView?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.Pane?>
@@ -53,33 +70,37 @@
                                 </Menu>
                             </items>
                         </Menu>
-
                     </menus>
                 </MenuBar>
             </top>
             <center>
-                <!-- SplitPane for dynamic adjustment -->
                 <SplitPane orientation="HORIZONTAL" dividerPositions="0.2, 0.8" BorderPane.alignment="CENTER">
                     <!-- Toolbox Panel -->
                     <VBox fx:id="toolboxVBox" alignment="CENTER" spacing="30.0" styleClass="toolbox-panel">
                         <Label text="TOOLBOX" styleClass="title-label" />
                         <Label text="Classes (Basic)" styleClass="section-label" />
                         <Button fx:id="classButton" text="Class" styleClass="tool-button" />
+                        <Button fx:id="interfaceButton" text="Interface" styleClass="tool-button" />
+
                         <Button fx:id="associationButton" text="Association" styleClass="tool-button" />
                         <Button fx:id="aggregationButton" text="Aggregation" styleClass="tool-button" />
                         <Button fx:id="compositionButton" text="Composition" styleClass="tool-button" />
                         <Button fx:id="InheritanceButton" text="Inheritance" styleClass="tool-button" />
                     </VBox>
 
-                    <!-- Canvas Pane (Center Content) -->
+                    <!-- Canvas Pane -->
                     <Pane fx:id="canvasContainer" prefHeight="633.0" prefWidth="679.0" styleClass="canvas-container" />
 
                     <!-- Properties Panel -->
-                    <VBox fx:id="propertiesPanel" alignment="CENTER" spacing="30.0" styleClass="properties-panel">
-                        <Label text="PROPERTIES" styleClass="title-label" />
+                    <VBox fx:id="propertiesPanel" alignment="TOP_CENTER" spacing="20.0" styleClass="properties-panel">
+                        <!-- Class Hierarchy Section -->
+                        <VBox spacing="20.0" styleClass="properties-section" alignment="CENTER">
+                            <Label text="Class Hierarchy" styleClass="section-label" />
+                            <TreeView fx:id="classHierarchyView" />
+                        </VBox>
 
                         <!-- Attributes Section -->
-                        <VBox spacing="20.0" styleClass="properties-section" alignment="CENTER">
+                        <VBox spacing="10.0" styleClass="properties-section" alignment="CENTER">
                             <Label text="Attributes" styleClass="section-label" />
                             <TextField fx:id="attributesField" promptText="Add Attribute" />
                             <ComboBox fx:id="attributeAccessModifier" promptText="Access Modifier">
@@ -91,13 +112,11 @@
                                     </FXCollections>
                                 </items>
                             </ComboBox>
-                            <AnchorPane>
-                                <Button fx:id="addAttributeButton" text="Add Attribute" styleClass="action-button" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" />
-                            </AnchorPane>
+                            <Button fx:id="addAttributeButton" text="Add Attribute" styleClass="action-button" />
                         </VBox>
 
                         <!-- Operations Section -->
-                        <VBox spacing="20.0" styleClass="properties-section" alignment="CENTER">
+                        <VBox spacing="10.0" styleClass="properties-section" alignment="CENTER">
                             <Label text="Operations" styleClass="section-label" />
                             <TextField fx:id="operationsField" promptText="Add Operation" />
                             <ComboBox fx:id="operationAccessModifier" promptText="Access Modifier">
@@ -109,15 +128,11 @@
                                     </FXCollections>
                                 </items>
                             </ComboBox>
-                            <AnchorPane>
-                                <Button fx:id="addOperationButton" text="Add Operation" styleClass="action-button" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" />
-                            </AnchorPane>
+                            <Button fx:id="addOperationButton" text="Add Operation" styleClass="action-button" />
                         </VBox>
 
                         <!-- Delete Button -->
-                        <AnchorPane>
-                            <Button fx:id="deleteButton" text="Delete Selected" styleClass="delete-button" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" />
-                        </AnchorPane>
+                        <Button fx:id="deleteButton" text="Delete Selected" styleClass="delete-button" />
                     </VBox>
                 </SplitPane>
             </center>

@@ -66,9 +66,13 @@ public class Controller {
     private MenuItem pngMenuItem;
     @FXML
     private MenuItem GenerateCode;
+    @FXML
+    private TreeView<String> classHierarchyView; // Hierarchy view for classes
+    private TreeItem<String> rootItem;
 
     @FXML
     private MenuItem SaveAs;
+
 
     @FXML
     private MenuItem Load;
@@ -93,6 +97,8 @@ public class Controller {
     @FXML
     private Button addAttributeButton;
     @FXML
+    private Button interfaceButton;
+    @FXML
     private Button addOperationButton;
     private Button activeButton;  // To keep track of the active (clicked) button
     private double offsetX, offsetY;  // For storing the mouse offset while dragging
@@ -114,6 +120,9 @@ public class Controller {
         Canvas canvas = new Canvas(910, 780);
         GraphicsContext gc = canvas.getGraphicsContext2D();
         canvasContainer.getChildren().add(canvas);
+        rootItem = new TreeItem<>("Model");
+        rootItem.setExpanded(true);
+        classHierarchyView.setRoot(rootItem);
 
         // Set up zoom functionality
         scaleTransform = new Scale(1, 1, 0, 0);  // Initialize with no scaling
@@ -184,6 +193,7 @@ public class Controller {
         buttons.add(aggregationButton);
         buttons.add(compositionButton);
         buttons.add(InheritanceButton);
+        buttons.add(interfaceButton);
 
         for (Button button : buttons) {
             button.setOnAction(event -> handleButtonClick(button, buttons));
@@ -194,11 +204,15 @@ public class Controller {
             if (activeButton == classButton) {
                 // Create a new class diagram if the Class button is active
                 createClassDiagram(gc, event.getX(), event.getY());
+            } else if (activeButton == interfaceButton) {
+                // Create a new interface diagram if the Interface button is active
+                createInterfaceDiagram(gc, event.getX(), event.getY());
             } else {
-                // Handle selection and inline editing of a class diagram
+                // Handle selection and inline editing of a class or interface diagram
                 handleClassEditing(event, gc);
             }
         });
+
 
 
         // Set mouse events for dragging
@@ -221,6 +235,7 @@ public class Controller {
                 deselectAllButtons(buttons);
 
             });
+
 
     }
     @FXML
@@ -261,6 +276,93 @@ public class Controller {
                 e.printStackTrace();
                 showError("Failed to load Class Diagram: " + e.getMessage());
             }
+        }
+    }
+    private void updateClassHierarchy() {
+        Platform.runLater(() -> {
+            rootItem.getChildren().clear(); // Clear the hierarchy
+            for (ClassDiagram diagram : diagrams.values()) {
+                TreeItem<String> classNode = new TreeItem<>(diagram.className);
+
+                // Add attributes as children
+                for (String attribute : diagram.attributes) {
+                    classNode.getChildren().add(new TreeItem<>("Attribute: " + attribute));
+                }
+
+                // Add operations as children
+                for (String operation : diagram.operations) {
+                    classNode.getChildren().add(new TreeItem<>("Operation: " + operation));
+                }
+
+                rootItem.getChildren().add(classNode);
+            }
+        });
+    }
+    private void createInterfaceDiagram(GraphicsContext gc, double x, double y) {
+        String key = "Interface" + x + "," + y;
+        if (!diagrams.containsKey(key)) {
+            diagrams.put(key, new InterfaceDiagram(x, y)); // Create and store a new interface diagram
+            drawInterfaceDiagram(gc, (InterfaceDiagram) diagrams.get(key));
+            updateClassHierarchy();
+        }
+    }
+    private void drawInterfaceDiagram(GraphicsContext gc, InterfaceDiagram interfaceDiagram) {
+        double x = interfaceDiagram.x;
+        double y = interfaceDiagram.y;
+
+        // Calculate the required width based on the widest text
+        double maxTextWidth = getMaxTextWidth(gc, interfaceDiagram);
+        double width = Math.max(classDiagramWidth, maxTextWidth + 40); // Add more padding
+
+        double rowHeight = 30; // Row height for each section
+        double baseHeight = rowHeight * 2; // Height for <<interface>> and name rows
+        double operationHeight = Math.max(rowHeight, rowHeight * interfaceDiagram.operations.size()); // At least one row for operations
+        double height = baseHeight + operationHeight; // Total height of the interface diagram
+
+        // Update the interface diagram dimensions
+        interfaceDiagram.width = width;
+        interfaceDiagram.height = height;
+
+        // Check if this diagram is selected
+        boolean isSelected = selectedComponent == interfaceDiagram;
+
+        // Draw the interface rectangle with a light green fill and green border if selected
+        gc.setFill(isSelected ? Color.LIGHTGREEN : Color.WHITE); // Light green for selected
+        gc.fillRect(x, y, width, height);
+        gc.setStroke(isSelected ? Color.GREEN : Color.BLACK); // Green border for selected
+        gc.setLineWidth(isSelected ? 3 : 2); // Thicker border for selected
+        gc.strokeRect(x, y, width, height);
+
+        // Draw <<interface>> label
+        gc.setFill(Color.BLACK);
+        gc.setFont(Font.font("Arial", 12));
+        gc.fillText("<<interface>>", x + (width - 80) / 2, y + 15);
+
+        // Draw interface name
+        gc.setFont(Font.font("Arial", 14));
+        gc.fillText(interfaceDiagram.interfaceName, x + 10, y + 40);
+
+        // Draw operations (leave space if empty)
+        gc.setFont(Font.font("Arial", 12));
+        if (interfaceDiagram.operations.isEmpty()) {
+            gc.fillText(" ", x + 10, y + baseHeight + rowHeight / 2 + 5); // Placeholder for empty operations
+        } else {
+            for (int i = 0; i < interfaceDiagram.operations.size(); i++) {
+                gc.fillText(
+                        interfaceDiagram.operations.get(i),
+                        x + 10,
+                        y + baseHeight + (i + 1) * rowHeight - 10 // Adjusted for spacing
+                );
+            }
+        }
+
+        // Draw connection points
+        gc.setFill(Color.RED); // Red for connection points
+        double[][] connectionPoints = interfaceDiagram.getConnectionPoints();
+        double radius = 3.0; // Smaller radius for connection points
+
+        for (double[] point : connectionPoints) {
+            gc.fillOval(point[0] - radius, point[1] - radius, 2 * radius, 2 * radius);
         }
     }
 
@@ -388,6 +490,7 @@ public class Controller {
         if (!diagrams.containsKey(key)) {
             diagrams.put(key, new ClassDiagram(x, y)); // Create and store a new class diagram
             drawClassDiagram(gc, diagrams.get(key));
+            updateClassHierarchy();
         }
     }
     private void drawClassDiagram(GraphicsContext gc, ClassDiagram classDiagram) {
@@ -674,7 +777,8 @@ public class Controller {
             // Remove all lines connected to this diagram
             lineConnections.removeIf(line -> line.startDiagram == diagram || line.endDiagram == diagram);
 
-            selectedComponent = null; // Clear selection
+            selectedComponent = null;
+            updateClassHierarchy();
         } else if (selectedComponent instanceof LineConnection) {
             // Delete the selected line connection
             LineConnection line = (LineConnection) selectedComponent;
@@ -867,6 +971,7 @@ public class Controller {
                 classDiagram.className = nameField.getText().trim();
                 canvasContainer.getChildren().remove(nameField);
                 redrawCanvas(gc);
+                updateClassHierarchy();
             }
         });
 
@@ -875,6 +980,7 @@ public class Controller {
                 classDiagram.className = nameField.getText().trim();
                 canvasContainer.getChildren().remove(nameField);
                 redrawCanvas(gc);
+                updateClassHierarchy();
             }
         });
     }
@@ -1102,6 +1208,7 @@ public class Controller {
                 diagram.attributes.add(prefix + " " + attributeName); // Add the attribute with the prefix
                 attributesField.clear();
                 redrawCanvas(gc);
+                updateClassHierarchy();
             } else {
                 showError("Please enter an attribute name and select an access modifier.");
             }
@@ -1124,6 +1231,7 @@ public class Controller {
                 operationsField.clear();
 
                 redrawCanvas(gc);
+                updateClassHierarchy();
             } else {
                 showError("Please enter an operation name and select an access modifier.");
             }
@@ -1138,7 +1246,11 @@ public class Controller {
 
         // Redraw all class diagrams
         for (ClassDiagram diagram : diagrams.values()) {
-            drawClassDiagram(gc, diagram);
+            if (diagram instanceof InterfaceDiagram) {
+                drawInterfaceDiagram(gc, (InterfaceDiagram) diagram);
+            } else {
+                drawClassDiagram(gc, diagram);
+            }
         }
 
         // Redraw all dynamic line connections
@@ -1592,6 +1704,18 @@ public class Controller {
         }
     }
 
+    private static class InterfaceDiagram extends ClassDiagram {
+        String interfaceName = "Interface"; // Default interface name
+
+        InterfaceDiagram(double x, double y) {
+            super(x, y);
+        }
+
+        @Override
+        public double getHeight() {
+            return 50 + 20 * operations.size(); // Interfaces don't have attributes
+        }
+    }
 
 
 }
