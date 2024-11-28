@@ -1147,32 +1147,35 @@ public class Controller {
             boolean isSelected = line.equals(selectedComponent);
 
             // Draw each segment of the line
-            gc.setStroke(Color.BLACK);
-            gc.setLineWidth(2);
+            gc.setStroke(isSelected ? Color.web("#5DADE2") : Color.BLACK);
+            gc.setLineWidth(isSelected ? 4 : 2);
+
             for (int i = 0; i < points.size() - 1; i++) {
                 double[] start = points.get(i);
                 double[] end = points.get(i + 1);
-                gc.strokeLine(start[0], start[1], end[0], end[1]);
-            }
 
-            // If selected, highlight the line segments
-            if (isSelected) {
-                gc.setStroke(Color.web("#5DADE2"));
-                gc.setLineWidth(4);
-                for (int i = 0; i < points.size() - 1; i++) {
-                    double[] start = points.get(i);
-                    double[] end = points.get(i + 1);
+                // Stop the last segment before a shape if necessary
+                if (i == points.size() - 2) { // Last segment
+                    double[] adjustedEnd = end.clone(); // Clone end to modify
+                    if (line.lineType == InheritanceButton) {
+                        adjustedEnd = calculateTriangleBaseIntersection(end, start, 15); // Adjust for hollow triangle
+                    } else if (line.lineType == aggregationButton || line.lineType == compositionButton) {
+                        adjustedEnd = calculateDiamondBaseIntersection(end, start, 15); // Adjust for diamond
+                    }
+                    gc.strokeLine(start[0], start[1], adjustedEnd[0], adjustedEnd[1]);
+                } else {
                     gc.strokeLine(start[0], start[1], end[0], end[1]);
                 }
             }
 
-            // Draw control points for the line
-            gc.setFill(Color.BLACK); // Control points are now black circles
-            for (double[] controlPoint : line.controlPoints) {
-                gc.fillOval(controlPoint[0] - 4, controlPoint[1] - 4, 8, 8); // Draw black circles for control points
+            // Draw control points for intermediate points only
+            gc.setFill(Color.BLACK);
+            for (int i = 1; i < points.size() - 1; i++) {
+                double[] controlPoint = points.get(i);
+                gc.fillOval(controlPoint[0] - 4, controlPoint[1] - 4, 8, 8); // Draw control point circles
             }
 
-            // Optionally redraw diamonds or shapes at the end of the line
+            // Draw shapes at the end of the line
             double[] start = points.get(points.size() - 2); // Second-to-last point
             double[] end = points.get(points.size() - 1);   // Last point
             if (line.lineType == aggregationButton) {
@@ -1195,6 +1198,21 @@ public class Controller {
             }
         }
     }
+    private double[] calculateTriangleBaseIntersection(double[] end, double[] start, double triangleSize) {
+        double angle = Math.atan2(end[1] - start[1], end[0] - start[0]);
+        double intersectionX = end[0] - triangleSize * Math.cos(angle);
+        double intersectionY = end[1] - triangleSize * Math.sin(angle);
+        return new double[]{intersectionX, intersectionY};
+    }
+
+    private double[] calculateDiamondBaseIntersection(double[] end, double[] start, double diamondSize) {
+        double angle = Math.atan2(end[1] - start[1], end[0] - start[0]);
+        double intersectionX = end[0] - 2 * diamondSize * Math.cos(angle);
+        double intersectionY = end[1] - 2 * diamondSize * Math.sin(angle);
+        return new double[]{intersectionX, intersectionY};
+    }
+
+
 
 
     private void drawHollowTriangle(GraphicsContext gc, double endX, double endY, double startX, double startY, boolean isSelected) {
@@ -1218,6 +1236,8 @@ public class Controller {
         gc.setLineWidth(isSelected ? 3 : 2); // Thicker border if selected
         gc.strokePolygon(xPoints, yPoints, 3); // Hollow triangle
     }
+
+
 
     private void showLineTextField(double mouseX, double mouseY, LineConnection line, GraphicsContext gc) {
         // Calculate the midpoint of the line
@@ -1389,8 +1409,13 @@ public class Controller {
         String[] parts = attribute.split(":");
         if (parts.length == 2) {
             String accessModifierAndName = parseAccessModifier(parts[0]);
-            String type = parts[1].trim();
-            return accessModifierAndName + " " + type;
+            String[] accessParts = accessModifierAndName.split(" ", 2);
+            if (accessParts.length == 2) {
+                String accessModifier = accessParts[0];
+                String name = accessParts[1];
+                String type = parts[1].trim();
+                return accessModifier + " " + type + " " + name; // Format as: accessModifier type name
+            }
         }
         // If the format is invalid, return a comment to indicate the issue
         return "// Invalid attribute format: " + attribute;

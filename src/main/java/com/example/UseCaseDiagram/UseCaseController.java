@@ -3,6 +3,7 @@ package com.example.UseCaseDiagram;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.CacheHint;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
@@ -128,6 +129,9 @@ public class UseCaseController {
         deleteButton.setOnAction(event -> handleDeleteAction(gc));
 
         canvasContainer.setFocusTraversable(true); // Make it focusable
+        canvasContainer.setCache(true);
+        canvasContainer.setCacheHint(CacheHint.SPEED);
+
 
         canvasContainer.setOnMouseClicked(event -> {
             // Check if a TextField exists
@@ -1483,9 +1487,9 @@ public class UseCaseController {
         subjectButton.getStyleClass().removeAll("tool-button-selected", "tool-button");
         subjectButton.getStyleClass().add("tool-button");
         includeButton.getStyleClass().removeAll("tool-button-selected", "tool-button");
-        includeButton.getStyleClass().add("tool-button");
+        includeButton.getStyleClass().add("action-button");
         extendButton.getStyleClass().removeAll("tool-button-selected", "tool-button");
-        extendButton.getStyleClass().add("tool-button");
+        extendButton.getStyleClass().add("action-button");
     }
 
 

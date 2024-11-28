@@ -13,6 +13,8 @@ public class Main extends Application {
     public void start(Stage stage) throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(com.example.ClassDiagram.Main.class.getResource("class_diagram.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
+        scene.getStylesheets().add(getClass().getResource("styles.css").toExternalForm());
+
         stage.setTitle("UML-EDITOR");
         stage.setScene(scene);
         stage.show();
