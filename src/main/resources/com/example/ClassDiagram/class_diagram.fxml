@@ -53,11 +53,7 @@
                                 </Menu>
                             </items>
                         </Menu>
-                        <Menu text="View">
-                            <items>
-                                <MenuItem text="Action 1" />
-                            </items>
-                        </Menu>
+
                     </menus>
                 </MenuBar>
             </top>

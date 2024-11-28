@@ -1475,6 +1475,10 @@ public class UseCaseController {
 
         subjectButton.getStyleClass().removeAll("tool-button-selected", "tool-button");
         subjectButton.getStyleClass().add("tool-button");
+        includeButton.getStyleClass().removeAll("tool-button-selected", "tool-button");
+        includeButton.getStyleClass().add("tool-button");
+        extendButton.getStyleClass().removeAll("tool-button-selected", "tool-button");
+        extendButton.getStyleClass().add("tool-button");
     }
 
 
