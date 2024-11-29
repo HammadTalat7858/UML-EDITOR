@@ -1184,11 +1184,20 @@ public class Controller {
             for (ClassDiagram diagram : diagrams.values()) {
                 for (int i = 0; i < diagram.getConnectionPoints().length; i++) {
                     double[] point = diagram.getConnectionPoints()[i];
+
                     if (isNear(event.getX(), event.getY(), point[0], point[1]) && diagram != startDiagram) {
+                        // Validate the connection
+                        if (isInvalidLineConnection(startDiagram, diagram, activeButton)) {
+                            showError("Invalid connection: Interfaces cannot have association, aggregation, or composition lines.");
+                            isDrawingLine = false; // Reset the line drawing state
+                            redrawCanvas(gc);
+                            return;
+                        }
+
                         int startConnectionIndex = getNearestConnectionIndex(startDiagram, startX, startY);
                         int endConnectionIndex = i;
 
-                        // Create a dynamic LineConnection
+                        // Create a valid LineConnection
                         lineConnections.add(new LineConnection(
                                 startDiagram, startConnectionIndex,
                                 diagram, endConnectionIndex, activeButton
@@ -1222,6 +1231,21 @@ public class Controller {
         }
         return -1; // Should not happen for a valid start point
     }
+    private boolean isInvalidLineConnection(ClassDiagram startDiagram, ClassDiagram endDiagram, Button lineType) {
+        // Check if either diagram is an interface
+        boolean startIsInterface = startDiagram instanceof InterfaceDiagram;
+        boolean endIsInterface = endDiagram instanceof InterfaceDiagram;
+
+        // Disallow association, aggregation, or composition lines with interfaces
+        if ((lineType == associationButton || lineType == aggregationButton || lineType == compositionButton) &&
+                (startIsInterface || endIsInterface)) {
+            return true; // Invalid connection
+        }
+
+        // Allow all other connections
+        return false;
+    }
+
     @FXML
     private void loadDiagramFromFile() {
         FileChooser fileChooser = new FileChooser();
@@ -1651,7 +1675,8 @@ public class Controller {
             line.initializeButton(aggregationButton, compositionButton, associationButton, InheritanceButton);
         }
     }
-    @FXML private void exportToJavaCode() {
+    @FXML
+    private void exportToJavaCode() {
         DirectoryChooser directoryChooser = new DirectoryChooser();
         directoryChooser.setTitle("Select Output Folder");
         File folder = directoryChooser.showDialog(canvasContainer.getScene().getWindow());
@@ -1659,17 +1684,24 @@ public class Controller {
         if (folder != null && folder.isDirectory()) {
             for (ClassDiagram diagram : diagrams.values()) {
                 String classCode = generateClassCode(diagram);
-                File javaFile = new File(folder, diagram.className + ".java");
+
+                // Check if it's an interface and modify the name accordingly
+                String fileName = (diagram instanceof InterfaceDiagram)
+                        ? ((InterfaceDiagram) diagram).interfaceName + ".java"
+                        : diagram.className + ".java";
+
+                File javaFile = new File(folder, fileName);
 
                 try (PrintWriter writer = new PrintWriter(javaFile)) {
                     writer.write(classCode);
-                    showInfo("Class " + diagram.className + " exported to " + javaFile.getAbsolutePath());
+                    showInfo("File exported to " + javaFile.getAbsolutePath());
                 } catch (IOException e) {
-                    showError("Error exporting class " + diagram.className + ": " + e.getMessage());
+                    showError("Error exporting file: " + e.getMessage());
                 }
             }
         }
     }
+
     private String parseAccessModifier(String declaration) {
         String trimmed = declaration.trim();
         String accessModifier = "";
@@ -1711,19 +1743,18 @@ public class Controller {
     }
 
     private String parseOperation(String operation) {
-        // Extract the parts of the operation in the format: accessModifier name():returnType
         String[] parts = operation.split(":");
         if (parts.length == 2) {
-            String accessModifierAndName = parseAccessModifier(parts[0]);
-            String[] accessModifierAndNameParts = accessModifierAndName.split(" ");
-            if (accessModifierAndNameParts.length == 2) {
-                String accessModifier = accessModifierAndNameParts[0];
-                String name = accessModifierAndNameParts[1];
-                String returnType = parts[1].trim();
-                return accessModifier + " " + returnType + " " + name + " {\n        // TODO: Implement this method\n    }";
-            }
+            String declaration = parts[0].trim(); // Example: "+ anyfunction(String id,String name)"
+            String returnType = parts[1].trim(); // Example: "boolean"
+
+            // Parse access modifier
+            String accessModifier = getAccessModifierSymbol(declaration.substring(0, 1)); // First character (+, -, #, ~)
+            String methodSignature = declaration.substring(1).trim(); // Remove the access modifier symbol
+
+            // Generate the method
+            return accessModifier + " " + returnType + " " + methodSignature + " {\n        // TODO: Implement this method\n    }";
         }
-        // If the format is invalid, return a comment to indicate the issue
         return "// Invalid operation format: " + operation;
     }
 
@@ -1812,7 +1843,16 @@ public class Controller {
 
             // Add method stubs for implemented interfaces
             for (String interfaceName : implementedInterfaces) {
-                InterfaceDiagram interfaceDiagram = (InterfaceDiagram) diagrams.get(interfaceName);
+                // Locate the InterfaceDiagram based on its name
+                InterfaceDiagram interfaceDiagram = null;
+                for (ClassDiagram diagram : diagrams.values()) {
+                    if (diagram instanceof InterfaceDiagram && ((InterfaceDiagram) diagram).interfaceName.equals(interfaceName)) {
+                        interfaceDiagram = (InterfaceDiagram) diagram;
+                        break;
+                    }
+                }
+
+                // Generate method stubs
                 if (interfaceDiagram != null) {
                     for (String operation : interfaceDiagram.operations) {
                         code.append("    @Override\n    ").append(parseOperation(operation)).append("\n\n");
@@ -1825,18 +1865,19 @@ public class Controller {
 
         return code.toString();
     }
+
+
     private String parseInterfaceOperation(String operation) {
-        // Similar to parseOperation but without the body
         String[] parts = operation.split(":");
         if (parts.length == 2) {
-            String accessModifierAndName = parseAccessModifier(parts[0]);
-            String[] accessModifierAndNameParts = accessModifierAndName.split(" ");
-            if (accessModifierAndNameParts.length == 2) {
-                String accessModifier = accessModifierAndNameParts[0];
-                String name = accessModifierAndNameParts[1];
-                String returnType = parts[1].trim();
-                return returnType + " " + name + "();";
-            }
+            String declaration = parts[0].trim(); // Example: "+ anyfunction(String id,String name)"
+            String returnType = parts[1].trim(); // Example: "boolean"
+
+            // Remove the access modifier and keep the raw signature
+            String methodSignature = declaration.substring(1).trim(); // Remove the access modifier symbol
+
+            // Generate the interface method
+            return returnType + " " + methodSignature + ";";
         }
         return "// Invalid operation format: " + operation;
     }
