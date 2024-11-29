@@ -228,11 +228,13 @@ public class Controller {
         toolboxVBox.setOnMouseClicked(event -> {
             clearSelection();
             deselectAllButtons(buttons);
+            resetSelection();
         });
 
             propertiesPanel.setOnMouseClicked(event -> {
                 clearSelection();
                 deselectAllButtons(buttons);
+                resetSelection();
 
             });
 
@@ -282,22 +284,35 @@ public class Controller {
         Platform.runLater(() -> {
             rootItem.getChildren().clear(); // Clear the hierarchy
             for (ClassDiagram diagram : diagrams.values()) {
-                TreeItem<String> classNode = new TreeItem<>(diagram.className);
+                TreeItem<String> node;
 
-                // Add attributes as children
-                for (String attribute : diagram.attributes) {
-                    classNode.getChildren().add(new TreeItem<>("Attribute: " + attribute));
+                if (diagram instanceof InterfaceDiagram) {
+                    // Display as "Interface: <interfaceName>"
+                    InterfaceDiagram interfaceDiagram = (InterfaceDiagram) diagram;
+                    node = new TreeItem<>(interfaceDiagram.interfaceName);
+                } else {
+                    // Display as "Class: <className>"
+                    node = new TreeItem<>(diagram.className);
                 }
 
-                // Add operations as children
+                // Add attributes as children (only for ClassDiagram)
+                if (!(diagram instanceof InterfaceDiagram)) {
+                    for (String attribute : diagram.attributes) {
+                        node.getChildren().add(new TreeItem<>("Attribute: " + attribute));
+                    }
+                }
+
+                // Add operations as children (for both ClassDiagram and InterfaceDiagram)
                 for (String operation : diagram.operations) {
-                    classNode.getChildren().add(new TreeItem<>("Operation: " + operation));
+                    node.getChildren().add(new TreeItem<>("Operation: " + operation));
                 }
 
-                rootItem.getChildren().add(classNode);
+                // Add the node to the root item
+                rootItem.getChildren().add(node);
             }
         });
     }
+
     private void createInterfaceDiagram(GraphicsContext gc, double x, double y) {
         String key = "Interface" + x + "," + y;
         if (!diagrams.containsKey(key)) {
@@ -306,6 +321,38 @@ public class Controller {
             updateClassHierarchy();
         }
     }
+    @FXML
+    private void updateUIForSelection() {
+        if (selectedComponent instanceof InterfaceDiagram) {
+            // Disable the "Add Attribute" button
+            addAttributeButton.setDisable(true);
+
+            // Add the disabled-button CSS class for the blur effect
+            if (!addAttributeButton.getStyleClass().contains("disabled-button")) {
+                addAttributeButton.getStyleClass().add("disabled-button");
+            }
+
+            // Optional: Set a tooltip explaining why it's disabled
+            Tooltip tooltip = new Tooltip("Attributes cannot be added to an Interface.");
+            Tooltip.install(addAttributeButton, tooltip);
+        } else {
+            // Enable the "Add Attribute" button
+            addAttributeButton.setDisable(false);
+
+            // Remove the disabled-button CSS class
+            addAttributeButton.getStyleClass().remove("disabled-button");
+
+            // Remove any tooltip
+            Tooltip.uninstall(addAttributeButton, null);
+        }
+    }
+
+    // Call this method whenever selection changes
+    private void handleSelectionChange() {
+        updateUIForSelection();
+        redrawCanvas(((Canvas) canvasContainer.getChildren().get(0)).getGraphicsContext2D());
+    }
+
     private void drawInterfaceDiagram(GraphicsContext gc, InterfaceDiagram interfaceDiagram) {
         double x = interfaceDiagram.x;
         double y = interfaceDiagram.y;
@@ -327,20 +374,33 @@ public class Controller {
         boolean isSelected = selectedComponent == interfaceDiagram;
 
         // Draw the interface rectangle with a light green fill and green border if selected
-        gc.setFill(isSelected ? Color.LIGHTGREEN : Color.WHITE); // Light green for selected
+        gc.setFill(isSelected ? Color.LIGHTBLUE : Color.WHITE); // Light blue for selected
         gc.fillRect(x, y, width, height);
-        gc.setStroke(isSelected ? Color.GREEN : Color.BLACK); // Green border for selected
+        gc.setStroke(isSelected ? Color.BLUE : Color.BLACK); // Blue border for selected
         gc.setLineWidth(isSelected ? 3 : 2); // Thicker border for selected
         gc.strokeRect(x, y, width, height);
 
         // Draw <<interface>> label
         gc.setFill(Color.BLACK);
         gc.setFont(Font.font("Arial", 12));
-        gc.fillText("<<interface>>", x + (width - 80) / 2, y + 15);
+        String interfaceLabel = "<<interface>>";
+        Text labelHelper = new Text(interfaceLabel);
+        labelHelper.setFont(gc.getFont());
+        double labelWidth = labelHelper.getBoundsInLocal().getWidth();
+        double labelX = x + (width - labelWidth) / 2; // Center horizontally
+        gc.fillText(interfaceLabel, labelX, y + 15);
 
         // Draw interface name
         gc.setFont(Font.font("Arial", 14));
-        gc.fillText(interfaceDiagram.interfaceName, x + 10, y + 40);
+        String interfaceName = interfaceDiagram.interfaceName;
+        Text nameHelper = new Text(interfaceName);
+        nameHelper.setFont(gc.getFont());
+        double nameWidth = nameHelper.getBoundsInLocal().getWidth();
+        double nameX = x + (width - nameWidth) / 2; // Center horizontally
+        gc.fillText(interfaceName, nameX, y + 40);
+
+        // Draw separator line below <<interface>> and name
+        gc.strokeLine(x, y + baseHeight, x + width, y + baseHeight);
 
         // Draw operations (leave space if empty)
         gc.setFont(Font.font("Arial", 12));
@@ -365,7 +425,55 @@ public class Controller {
             gc.fillOval(point[0] - radius, point[1] - radius, 2 * radius, 2 * radius);
         }
     }
+    private double getMaxTextWidth(GraphicsContext gc, InterfaceDiagram interfaceDiagram) {
+        Text textHelper = new Text();
+        textHelper.setFont(Font.font("Arial", 12));
 
+        // Calculate the width of the <<interface>> label
+        textHelper.setText("<<interface>>");
+        double maxWidth = textHelper.getLayoutBounds().getWidth();
+
+        // Calculate the width of the interface name
+        textHelper.setFont(Font.font("Arial", 14)); // Use a larger font for the name
+        textHelper.setText(interfaceDiagram.interfaceName);
+        double interfaceNameWidth = textHelper.getLayoutBounds().getWidth();
+        maxWidth = Math.max(maxWidth, interfaceNameWidth);
+
+        // Calculate the width of operations
+        textHelper.setFont(Font.font("Arial", 12)); // Reset to the smaller font for operations
+        for (String operation : interfaceDiagram.operations) {
+            textHelper.setText(operation);
+            double operationWidth = textHelper.getLayoutBounds().getWidth();
+            maxWidth = Math.max(maxWidth, operationWidth);
+        }
+
+        return maxWidth;
+    }
+    @FXML
+    private void resetSelection() {
+        // Clear the selected component and diagram key
+        selectedComponent = null;
+        selectedDiagramKey = null;
+
+        // Enable the "Add Attribute" button and remove any blur effect
+        addAttributeButton.setDisable(false);
+        addAttributeButton.getStyleClass().remove("disabled-button");
+
+        // Remove any tooltip on the "Add Attribute" button
+        Tooltip.uninstall(addAttributeButton, null);
+
+        // Deselect any active toolbox button
+        List<Button> buttons = Arrays.asList(classButton, associationButton, aggregationButton, compositionButton, InheritanceButton, interfaceButton);
+        deselectAllButtons(buttons);
+
+        // Redraw the canvas to reflect deselection
+        GraphicsContext gc = ((Canvas) canvasContainer.getChildren().get(0)).getGraphicsContext2D();
+        gc.clearRect(0, 0, canvasContainer.getWidth(), canvasContainer.getHeight());
+        redrawCanvas(gc);
+
+        // Clear other UI elements or selection-specific visuals if required
+        updateUIForSelection(); // Ensure the UI is fully reset
+    }
 
     private void handleZoom(ScrollEvent event) {
         if (event.isControlDown()) { // Check if Ctrl is held down
@@ -605,6 +713,10 @@ public class Controller {
     }
 
     private void selectDiagram(double mouseX, double mouseY) {
+        // Reset selection
+        selectedDiagramKey = null;
+        selectedComponent = null;
+
         // Iterate over all class diagrams to find the one containing the mouse coordinates
         for (Map.Entry<String, ClassDiagram> entry : diagrams.entrySet()) {
             ClassDiagram diagram = entry.getValue();
@@ -614,13 +726,15 @@ public class Controller {
                     mouseY >= diagram.y && mouseY <= diagram.y + diagram.height) {
                 selectedDiagramKey = entry.getKey(); // Store the selected diagram key
                 selectedComponent = diagram;        // Mark the class diagram as selected
+
+                // Update the UI based on the selected component
+                updateUIForSelection();
                 return;
             }
         }
 
-        // If no diagram is selected, clear the selection
-        selectedDiagramKey = null;
-        selectedComponent = null;
+        // If no diagram is selected, clear the selection and update the UI
+        updateUIForSelection();
     }
 
     private boolean isEmptyArea(double mouseX, double mouseY) {
@@ -850,44 +964,62 @@ public class Controller {
 
     private void handleClassEditing(MouseEvent event, GraphicsContext gc) {
         for (Map.Entry<String, ClassDiagram> entry : diagrams.entrySet()) {
-            ClassDiagram classDiagram = entry.getValue();
+            ClassDiagram diagram = entry.getValue();
             double mouseX = event.getX();
             double mouseY = event.getY();
 
-            // Check if the click occurred in the name area of the class diagram
-            if (mouseX >= classDiagram.x && mouseX <= classDiagram.x + classDiagramWidth) {
-                if (mouseY >= classDiagram.y && mouseY <= classDiagram.y + 30) {
-                    // Double-click to edit class name
-                    if (event.getClickCount() == 2) {
-                        editClassName(classDiagram, gc);
+            // Check if the click occurred within the diagram bounds
+            if (mouseX >= diagram.x && mouseX <= diagram.x + diagram.width) {
+                // Handle name editing for both Class and Interface diagrams
+                if (diagram instanceof InterfaceDiagram) {
+                    // Check if the click is near the interface name
+                    double nameStartY = diagram.y + 30; // Start position below <<Interface>>
+                    double nameEndY = nameStartY + 20;  // Adjust for text height
+                    if (mouseY >= nameStartY && mouseY <= nameEndY) {
+                        if (event.getClickCount() == 2) {
+                            editClassName(diagram, gc);
+                        }
+                        return;
                     }
-                    return;
+                } else {
+                    // Handle name editing for Class diagrams
+                    if (mouseY >= diagram.y && mouseY <= diagram.y + 30) {
+                        if (event.getClickCount() == 2) {
+                            editClassName(diagram, gc);
+                        }
+                        return;
+                    }
                 }
 
-                // Check if the click occurred in the attributes area
-                double attributeStartY = classDiagram.y + 30;
-                double attributeEndY = attributeStartY + 20 * classDiagram.attributes.size();
-                if (mouseY >= attributeStartY && mouseY <= attributeEndY) {
-                    if (event.getClickCount() == 2) {
-                        int index = (int) ((mouseY - attributeStartY) / 20);
-                        editAttribute(classDiagram, index, gc);
+                // Handle attributes and operations for Class diagrams
+                if (!(diagram instanceof InterfaceDiagram)) {
+                    double attributeStartY = diagram.y + 30;
+                    double attributeEndY = attributeStartY + Math.max(20, 20 * diagram.attributes.size()); // Ensure at least one row
+                    if (mouseY >= attributeStartY && mouseY <= attributeEndY) {
+                        if (event.getClickCount() == 2) {
+                            int index = (int) ((mouseY - attributeStartY) / 20);
+                            editAttribute(diagram, index, gc);
+                        }
+                        return;
                     }
-                    return;
                 }
 
-                // Check if the click occurred in the operations area
-                double operationStartY = attributeEndY + 10;
-                double operationEndY = operationStartY + 20 * classDiagram.operations.size();
+                // Handle operations for both Class and Interface diagrams
+                double operationStartY = diagram instanceof InterfaceDiagram
+                        ? diagram.y + 50 // Start after <<Interface>> and name
+                        : diagram.y + 30 + Math.max(20, 20 * diagram.attributes.size()) + 10;
+                double operationEndY = operationStartY + Math.max(20, 20 * diagram.operations.size()); // Ensure at least one row
                 if (mouseY >= operationStartY && mouseY <= operationEndY) {
                     if (event.getClickCount() == 2) {
                         int index = (int) ((mouseY - operationStartY) / 20);
-                        editOperation(classDiagram, index, gc);
+                        editOperation(diagram, index, gc);
                     }
                     return;
                 }
             }
         }
     }
+
 
     private void editAttribute(ClassDiagram classDiagram, int index, GraphicsContext gc) {
         double startY = classDiagram.y + 30 + index * 20; // Position of the attribute row
@@ -956,34 +1088,79 @@ public class Controller {
             }
         });
     }
-    private void editClassName(ClassDiagram classDiagram, GraphicsContext gc) {
-        TextField nameField = new TextField(classDiagram.className);
-        nameField.setLayoutX(classDiagram.x + 10);
-        nameField.setLayoutY(classDiagram.y + 5);
-        nameField.setPrefWidth(classDiagramWidth - 20);
+    private void editClassName(ClassDiagram diagram, GraphicsContext gc) {
+        String currentName;
+        double x, y, width;
+
+        // Determine the diagram type and fetch the relevant properties
+        if (diagram instanceof InterfaceDiagram) {
+            InterfaceDiagram interfaceDiagram = (InterfaceDiagram) diagram;
+            currentName = interfaceDiagram.interfaceName;
+            x = interfaceDiagram.x;
+            y = interfaceDiagram.y + 30; // Position below <<Interface>>
+            width = interfaceDiagram.width;
+        } else {
+            currentName = diagram.className;
+            x = diagram.x;
+            y = diagram.y + 15; // Adjusted to be near the class name's vertical position
+            width = diagram.width;
+        }
+
+        // Create the TextField with the current name
+        TextField nameField = new TextField(currentName);
+
+        // Calculate the width dynamically based on the text
+        Text textHelper = new Text(currentName);
+        textHelper.setFont(Font.font("Arial", 14)); // Match the font used in diagram rendering
+        double textWidth = textHelper.getBoundsInLocal().getWidth();
+
+        // Position the TextField centered horizontally and correctly vertically
+        nameField.setPrefWidth(textWidth + 20); // Add padding for a better appearance
+        nameField.setLayoutX(x + (width - nameField.getPrefWidth()) / 2); // Center horizontally
+        nameField.setLayoutY(y - 10); // Slightly adjust Y to align properly
+
+        // Style the TextField
         nameField.setStyle("-fx-background-color: white; -fx-border-color: transparent; -fx-font-size: 12px; -fx-text-fill: black;");
 
+        // Add the TextField to the canvas container
         canvasContainer.getChildren().add(nameField);
         nameField.requestFocus();
 
+        // Commit changes on Enter
         nameField.setOnKeyPressed(keyEvent -> {
             if (keyEvent.getCode() == KeyCode.ENTER) {
-                classDiagram.className = nameField.getText().trim();
+                String updatedName = nameField.getText().trim();
+
+                if (diagram instanceof InterfaceDiagram) {
+                    ((InterfaceDiagram) diagram).interfaceName = updatedName;
+                } else {
+                    diagram.className = updatedName;
+                }
+
                 canvasContainer.getChildren().remove(nameField);
-                redrawCanvas(gc);
-                updateClassHierarchy();
+                redrawCanvas(gc); // Redraw the canvas with the updated name
+                updateClassHierarchy(); // Update any hierarchy display
             }
         });
 
+        // Commit changes on focus loss
         nameField.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal) {
-                classDiagram.className = nameField.getText().trim();
+                String updatedName = nameField.getText().trim();
+
+                if (diagram instanceof InterfaceDiagram) {
+                    ((InterfaceDiagram) diagram).interfaceName = updatedName;
+                } else {
+                    diagram.className = updatedName;
+                }
+
                 canvasContainer.getChildren().remove(nameField);
-                redrawCanvas(gc);
-                updateClassHierarchy();
+                redrawCanvas(gc); // Redraw the canvas with the updated name
+                updateClassHierarchy(); // Update any hierarchy display
             }
         });
     }
+
     private String getAccessModifierSymbol(String accessModifier) {
         switch (accessModifier.toLowerCase()) {
             case "public":
@@ -1554,50 +1731,115 @@ public class Controller {
     private String generateClassCode(ClassDiagram classDiagram) {
         StringBuilder code = new StringBuilder();
 
-        // Find relationships
-        List<String> inheritance = new ArrayList<>();
-        List<String> associations = new ArrayList<>();
+        if (classDiagram instanceof InterfaceDiagram) {
+            // Handle interface generation
+            InterfaceDiagram interfaceDiagram = (InterfaceDiagram) classDiagram;
 
-        for (LineConnection connection : lineConnections) {
-            if (connection.startDiagram == classDiagram) {
-                if (connection.lineType == InheritanceButton) {
-                    inheritance.add(connection.endDiagram.className);
-                } else if (connection.lineType == associationButton || connection.lineType == aggregationButton ||
-                        connection.lineType == compositionButton) {
-                    associations.add(connection.endDiagram.className);
+            // Interface declaration
+            code.append("public interface ").append(interfaceDiagram.interfaceName);
+
+            // Add any inheritance (extends other interfaces)
+            List<String> inheritance = new ArrayList<>();
+            for (LineConnection connection : lineConnections) {
+                if (connection.startDiagram == interfaceDiagram && connection.lineType == InheritanceButton) {
+                    inheritance.add(connection.endDiagram instanceof InterfaceDiagram ?
+                            ((InterfaceDiagram) connection.endDiagram).interfaceName : null);
                 }
             }
+            if (!inheritance.isEmpty()) {
+                code.append(" extends ").append(String.join(", ", inheritance));
+            }
+            code.append(" {\n");
+
+            // Add operations
+            for (String operation : interfaceDiagram.operations) {
+                code.append("    ").append(parseInterfaceOperation(operation)).append("\n");
+            }
+
+            code.append("}\n");
+        } else {
+            // Handle class generation
+            List<String> inheritance = new ArrayList<>();
+            List<String> implementedInterfaces = new ArrayList<>();
+            List<String> associations = new ArrayList<>();
+
+            for (LineConnection connection : lineConnections) {
+                if (connection.startDiagram == classDiagram) {
+                    if (connection.lineType == InheritanceButton) {
+                        if (connection.endDiagram instanceof InterfaceDiagram) {
+                            implementedInterfaces.add(((InterfaceDiagram) connection.endDiagram).interfaceName);
+                        } else {
+                            inheritance.add(connection.endDiagram.className);
+                        }
+                    } else if (connection.lineType == associationButton || connection.lineType == aggregationButton ||
+                            connection.lineType == compositionButton) {
+                        associations.add(connection.endDiagram.className);
+                    }
+                }
+            }
+
+            // Class declaration
+            code.append("public class ").append(classDiagram.className);
+
+            // Add extends (inheritance) for parent class
+            if (!inheritance.isEmpty()) {
+                code.append(" extends ").append(inheritance.get(0)); // Handle only one parent class
+            }
+
+            // Add implements for interfaces
+            if (!implementedInterfaces.isEmpty()) {
+                code.append(" implements ").append(String.join(", ", implementedInterfaces));
+            }
+
+            code.append(" {\n\n");
+
+            // Association fields
+            for (String associatedClass : associations) {
+                code.append("    private ").append(associatedClass).append(" ").append(Character.toLowerCase(associatedClass.charAt(0)))
+                        .append(associatedClass.substring(1)).append(";\n");
+            }
+
+            // Attributes
+            for (String attribute : classDiagram.attributes) {
+                code.append("    ").append(parseAttribute(attribute)).append(";\n");
+            }
+            code.append("\n");
+
+            // Operations
+            for (String operation : classDiagram.operations) {
+                code.append("    ").append(parseOperation(operation)).append("\n\n");
+            }
+
+            // Add method stubs for implemented interfaces
+            for (String interfaceName : implementedInterfaces) {
+                InterfaceDiagram interfaceDiagram = (InterfaceDiagram) diagrams.get(interfaceName);
+                if (interfaceDiagram != null) {
+                    for (String operation : interfaceDiagram.operations) {
+                        code.append("    @Override\n    ").append(parseOperation(operation)).append("\n\n");
+                    }
+                }
+            }
+
+            code.append("}\n");
         }
 
-        // Class Declaration with Inheritance
-        code.append("public class ").append(classDiagram.className);
-        if (!inheritance.isEmpty()) {
-            code.append(" extends ").append(inheritance.get(0)); // Handle only one parent class
-        }
-        code.append(" {\n\n");
-
-        // Association Fields
-        for (String associatedClass : associations) {
-            code.append("    private ").append(associatedClass).append(" ").append(Character.toLowerCase(associatedClass.charAt(0)))
-                    .append(associatedClass.substring(1)).append(";\n");
-        }
-
-        // Attributes
-        for (String attribute : classDiagram.attributes) {
-            code.append("    ").append(parseAttribute(attribute)).append(";\n");
-        }
-        code.append("\n");
-
-        // Operations
-        for (String operation : classDiagram.operations) {
-            code.append("    ").append(parseOperation(operation)).append("\n\n");
-        }
-
-        code.append("}\n");
         return code.toString();
     }
-
-
+    private String parseInterfaceOperation(String operation) {
+        // Similar to parseOperation but without the body
+        String[] parts = operation.split(":");
+        if (parts.length == 2) {
+            String accessModifierAndName = parseAccessModifier(parts[0]);
+            String[] accessModifierAndNameParts = accessModifierAndName.split(" ");
+            if (accessModifierAndNameParts.length == 2) {
+                String accessModifier = accessModifierAndNameParts[0];
+                String name = accessModifierAndNameParts[1];
+                String returnType = parts[1].trim();
+                return returnType + " " + name + "();";
+            }
+        }
+        return "// Invalid operation format: " + operation;
+    }
 
 
     private static class ClassDiagram implements Serializable {
@@ -1704,8 +1946,9 @@ public class Controller {
         }
     }
 
-    private static class InterfaceDiagram extends ClassDiagram {
+    private static class InterfaceDiagram extends ClassDiagram implements Serializable {
         String interfaceName = "Interface"; // Default interface name
+        private static final long serialVersionUID = 1L;
 
         InterfaceDiagram(double x, double y) {
             super(x, y);
