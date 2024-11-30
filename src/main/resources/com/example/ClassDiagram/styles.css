@@ -1,0 +1,139 @@
+.root {
+    -fx-font-family: "Segoe UI", sans-serif;
+    -fx-background-color: #f4f4f4;
+}
+
+.title-label {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #FFFFFF;
+}
+
+.section-label {
+    -fx-font-size: 14px;
+    -fx-text-fill: #7f8c8d;
+}
+
+.toolbox-panel {
+    -fx-background-color: #2C2F33;
+    -fx-padding: 15px;
+    -fx-border-color: #d6d6d6;
+    -fx-border-width: 0 2px 0 0;
+}
+
+.properties-panel {
+    -fx-background-color: #2C2F33;
+    -fx-padding: 15px;
+    -fx-border-color: #d6d6d6;
+    -fx-border-width: 0 0 0 2px;
+}
+
+.tool-button, .action-button, .delete-button {
+    -fx-background-color: #3498db;
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 10px 20px;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+}
+
+.tool-button:hover, .action-button:hover, .delete-button:hover {
+ -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 8, 0.3, 2, 2);
+    -fx-background-color: #2980b9;
+}
+
+.properties-section {
+    -fx-padding: 15px;
+    -fx-background-color: #ffffff;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-border-color: #dcdcdc;
+    -fx-border-width: 1px;
+}
+
+.canvas-container {
+    -fx-background-color: #ffffff; /* White background for the canvas */
+    -fx-border-color: #dcdcdc;
+    -fx-border-width: 2;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 10, 0.1, 2, 2);
+}
+
+.split-pane {
+    -fx-background-color: transparent;
+}
+
+.split-pane .split-pane-divider {
+    -fx-background-color: #d6d6d6;
+    -fx-pref-width: 5px;
+    -fx-background-radius: 3px;
+}
+
+.split-pane .split-pane-divider:hover {
+    -fx-background-color: #b0b0b0;
+}
+.delete-button {
+    -fx-background-color: #E74C3C; /* Bright red for delete */
+    -fx-text-fill: white; /* White text for contrast */
+    -fx-font-weight: bold;
+    -fx-padding: 10px 20px;
+    -fx-border-radius: 5px; /* Rounded edges */
+    -fx-background-radius: 5px; /* Smooth background corners */
+    -fx-transition: all 0.3s ease; /* Smooth hover and press transitions */
+}
+
+.delete-button:hover {
+    -fx-background-color: #C0392B; /* Slightly darker red on hover */
+    -fx-cursor: hand; /* Pointer cursor on hover */
+}
+
+.delete-button:pressed {
+    -fx-background-color: #A93226; /* Darker red for pressed state */
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 10, 0.3, 1, 1); /* Add subtle shadow on press */
+}
+.tool-button {
+    -fx-background-color: #5DADE2; /* Default blue */
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 10px 20px;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-border-color: transparent;
+    -fx-transition: all 0.3s ease;
+}
+
+.tool-button:hover {
+    -fx-background-color: #3498DB; /* Slightly darker blue */
+    -fx-cursor: hand; /* Pointer cursor on hover */
+}
+
+.tool-button:pressed {
+    -fx-background-color: #2C82C9; /* Dark blue for pressed state */
+}
+
+.tool-button-selected {
+    -fx-background-color: #2ECC71; /* Green to indicate active selection */
+    -fx-text-fill: white;
+    -fx-border-color: #27AE60; /* Slightly darker green border */
+    -fx-border-width: 2px; /* Add a border for emphasis */
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-transition: all 0.3s ease;
+}
+.tool-button-selected:hover {
+    -fx-background-color: #2ECC71; /* Retain green color when hovered */
+    -fx-cursor: hand;
+}
+.disabled-button {
+    -fx-background-color: #5DADE2; /* Keep the button's original color */
+    -fx-opacity: 0.5; /* Make the button semi-transparent */
+    -fx-effect: innershadow(gaussian, rgba(0,0,0,0.1), 10, 0.5, 0, 0); /* Add a blur effect */
+    -fx-text-fill: white; /* Ensure the text remains visible */
+}
+
+
+.disabled-button:disabled {
+    -fx-opacity: 0.7; /* Slightly transparent */
+}
+
