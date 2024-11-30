@@ -9,6 +9,7 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
 import javafx.scene.image.PixelReader;
@@ -287,12 +288,12 @@ public class Controller {
                 TreeItem<String> node;
 
                 if (diagram instanceof InterfaceDiagram) {
-                    // Display as "Interface: <interfaceName>"
                     InterfaceDiagram interfaceDiagram = (InterfaceDiagram) diagram;
-                    node = new TreeItem<>(interfaceDiagram.interfaceName);
+                    node = new TreeItem<>("");
+                    node.setGraphic(createItalicLabel(interfaceDiagram.interfaceName)); // Add italic label
                 } else {
                     // Display as "Class: <className>"
-                    node = new TreeItem<>(diagram.className);
+                    node = new TreeItem<>(""+diagram.className);
                 }
 
                 // Add attributes as children (only for ClassDiagram)
@@ -312,6 +313,13 @@ public class Controller {
             }
         });
     }
+
+    private Label createItalicLabel(String text) {
+        Label label = new Label(text);
+        label.setStyle("-fx-font-style: italic; -fx-font-size: 12px;"); // Apply italic style
+        return label;
+    }
+
 
     private void createInterfaceDiagram(GraphicsContext gc, double x, double y) {
         String key = "Interface" + x + "," + y;
