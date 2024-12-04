@@ -43,9 +43,10 @@ public class Controller {
     @FXML
     private VBox toolboxVBox;
 
-    @FXML   private Button deleteButton;
     @FXML
-    private Button classButton;
+    Button deleteButton;
+    @FXML
+    Button classButton;
 
     @FXML
     private Button associationButton;
@@ -98,7 +99,7 @@ public class Controller {
     @FXML
     private Button addAttributeButton;
     @FXML
-    private Button interfaceButton;
+    Button interfaceButton;
     @FXML
     private Button addOperationButton;
     private Button activeButton;  // To keep track of the active (clicked) button
@@ -108,13 +109,13 @@ public class Controller {
     private final double classDiagramWidth = 120;
 
     // Map to store class diagrams
-    private Map<String, ClassDiagram> diagrams = new HashMap<>();
+    Map<String, ClassDiagram> diagrams = new HashMap<>();
 
     // Line drawing state
     private boolean isDrawingLine = false;
     private double startX, startY, endX, endY;
     private ClassDiagram startDiagram, endDiagram;
-    private List<LineConnection> lineConnections = new ArrayList<>();
+    List<LineConnection> lineConnections = new ArrayList<>();
 
     @FXML
     public void initialize() {
@@ -1891,7 +1892,7 @@ public class Controller {
     }
 
 
-    private static class ClassDiagram implements Serializable {
+    static class ClassDiagram implements Serializable {
         double x, y;
         double width = 120;  // Width of the rectangle
         double height = 50;  // Height of the rectangle
@@ -1995,7 +1996,7 @@ public class Controller {
         }
     }
 
-    private static class InterfaceDiagram extends ClassDiagram implements Serializable {
+    static class InterfaceDiagram extends ClassDiagram implements Serializable {
         String interfaceName = "Interface"; // Default interface name
         private static final long serialVersionUID = 1L;
 
