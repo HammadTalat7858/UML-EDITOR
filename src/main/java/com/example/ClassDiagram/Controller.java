@@ -70,14 +70,14 @@ public class Controller {
     public Pane canvasContainer;
 
     /** Scale transformation object for zoom functionality. */
-    private Scale scaleTransform;
+    public Scale scaleTransform;
 
     /** VBox container for the toolbox buttons. */
     @FXML
     VBox toolboxVBox;
 
     /** Button for deleting selected components. */
-    @FXML   private Button deleteButton;
+    @FXML   public Button deleteButton;
 
     /** Button to create a new class diagram. */
     @FXML
@@ -109,11 +109,11 @@ public class Controller {
 
     /** MenuItem for exporting the diagram as a JPEG image. */
     @FXML
-    private MenuItem jpegMenuItem;
+    public MenuItem jpegMenuItem;
 
     /** MenuItem for exporting the diagram as a PNG image. */
     @FXML
-    private MenuItem pngMenuItem;
+    public MenuItem pngMenuItem;
 
     /** MenuItem for generating code from the UML diagram. */
     @FXML
@@ -121,41 +121,41 @@ public class Controller {
 
     /** TreeView to display the class hierarchy. */
     @FXML
-    private TreeView<String> classHierarchyView;
+    public TreeView<String> classHierarchyView;
 
     /** Root item of the class hierarchy view. */
-    private TreeItem<String> rootItem;
+    public TreeItem<String> rootItem;
 
     /** MenuItem for the "Save As" functionality to save the current project. */
     @FXML
-    private MenuItem SaveAs;
+    public MenuItem SaveAs;
 
     /** MenuItem for loading a project. */
     @FXML
-    private MenuItem Load;
+    public MenuItem Load;
 
     /** MenuItem for closing the current project or the application. */
     @FXML
-    private MenuItem Close;
+    public MenuItem Close;
 
     /** MenuItem for loading a use-case diagram into the editor. */
     @FXML
-    private MenuItem loadusecase;
+    public MenuItem loadusecase;
 
     /** MenuItem for loading a class diagram into the editor. */
     @FXML
-    private MenuItem loadClass;
+    public MenuItem loadClass;
 
     /** VBox serving as the properties panel for displaying and modifying attributes of selected components. */
     @FXML
-    private VBox propertiesPanel;
+    public VBox propertiesPanel;
 
     /** TextField for entering or displaying attributes of the selected UML component. */
     @FXML
     TextField attributesField;
 
     /** Currently selected component in the editor, used for context-specific actions. */
-    private Object selectedComponent = null;
+    public Object selectedComponent = null;
 
     /** TextField for entering or displaying operations of the selected UML component. */
     @FXML
@@ -174,28 +174,28 @@ public class Controller {
     Button addOperationButton;
 
     /** Keeps track of the currently active button (clicked) in the editor. */
-    private Button activeButton;
+    public Button activeButton;
 
     /** For storing the mouse offset while dragging. */
-    private double offsetX, offsetY;
+    public double offsetX, offsetY;
 
     /** Key for storing the currently selected UML diagram in the project. */
-    private String selectedDiagramKey = null;
+    public String selectedDiagramKey = null;
 
     /** Default width for class diagrams in the editor. */
-    private final double classDiagramWidth = 120;
+    public final double classDiagramWidth = 120;
 
     /** Map for storing UML class diagrams, identified by their unique keys. */
     Map<String, ClassDiagram> diagrams = new HashMap<>();
 
     /** Flag indicating whether a line is currently being drawn between components. */
-    private boolean isDrawingLine = false;
+    public boolean isDrawingLine = false;
 
     /** Starting and Ending coordinates for a line being drawn. */
-    private double startX, startY, endX, endY;
+    public double startX, startY, endX, endY;
 
     /** Reference to the starting and ending diagram of a line connection. */
-    private ClassDiagram startDiagram, endDiagram;
+    public ClassDiagram startDiagram, endDiagram;
 
     /** List of all line connections created in the diagram editor. */
     List<LineConnection> lineConnections = new ArrayList<>();
@@ -334,7 +334,7 @@ public class Controller {
      * Prompts the user to confirm if unsaved changes will be lost.
      */
     @FXML
-    private void loadUseCaseDiagram() {
+    public void loadUseCaseDiagram() {
         Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION, "Switch to Use Case Diagram? Unsaved changes will be lost.", ButtonType.YES, ButtonType.NO);
         confirmation.setTitle("Confirm Switch");
         confirmation.setHeaderText(null);
@@ -359,7 +359,7 @@ public class Controller {
      * Prompts the user to confirm if unsaved changes will be lost.
      */
     @FXML
-    private void loadClassDiagram() {
+    public void loadClassDiagram() {
         Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION, "Switch to Class Diagram? Unsaved changes will be lost.", ButtonType.YES, ButtonType.NO);
         confirmation.setTitle("Confirm Switch");
         confirmation.setHeaderText(null);
@@ -386,7 +386,7 @@ public class Controller {
      * It includes attributes and operations of each class or interface.
      * </p>
      */
-    private void updateClassHierarchy() {
+    public void updateClassHierarchy() {
         Platform.runLater(() -> {
             rootItem.getChildren().clear(); // Clear the hierarchy
             for (ClassDiagram diagram : diagrams.values()) {
@@ -425,7 +425,7 @@ public class Controller {
      * @param text the text to display in the label
      * @return a Label with italicized text style
      */
-    private Label createItalicLabel(String text) {
+    public Label createItalicLabel(String text) {
         Label label = new Label(text);
         label.setStyle("-fx-font-style: italic; -fx-font-size: 12px;"); // Apply italic style
         return label;
@@ -439,7 +439,7 @@ public class Controller {
      * @param x the x-coordinate for the diagram
      * @param y the y-coordinate for the diagram
      */
-    private void createInterfaceDiagram(GraphicsContext gc, double x, double y) {
+    public void createInterfaceDiagram(GraphicsContext gc, double x, double y) {
         String key = "Interface" + x + "," + y;
         if (!diagrams.containsKey(key)) {
             diagrams.put(key, new InterfaceDiagram(x, y)); // Create and store a new interface diagram
@@ -454,7 +454,7 @@ public class Controller {
      * Updates the button's style and tooltip accordingly.
      */
     @FXML
-    private void updateUIForSelection() {
+    public void updateUIForSelection() {
         if (selectedComponent instanceof InterfaceDiagram) {
             // Disable the "Add Attribute" button
             addAttributeButton.setDisable(true);
@@ -482,7 +482,7 @@ public class Controller {
     /**
      * Handles changes to the selected component, updating the UI and redrawing the canvas.
      */
-    private void handleSelectionChange() {
+    public void handleSelectionChange() {
         updateUIForSelection();
         redrawCanvas(((Canvas) canvasContainer.getChildren().get(0)).getGraphicsContext2D());
     }
@@ -494,7 +494,7 @@ public class Controller {
      * @param gc the GraphicsContext used for drawing
      * @param interfaceDiagram the InterfaceDiagram to draw
      */
-    private void drawInterfaceDiagram(GraphicsContext gc, InterfaceDiagram interfaceDiagram) {
+    public void drawInterfaceDiagram(GraphicsContext gc, InterfaceDiagram interfaceDiagram) {
         double x = interfaceDiagram.x;
         double y = interfaceDiagram.y;
 
@@ -574,7 +574,7 @@ public class Controller {
      * @param interfaceDiagram the InterfaceDiagram whose text widths are calculated
      * @return the maximum text width
      */
-    private double getMaxTextWidth(GraphicsContext gc, InterfaceDiagram interfaceDiagram) {
+    public double getMaxTextWidth(GraphicsContext gc, InterfaceDiagram interfaceDiagram) {
         Text textHelper = new Text();
         textHelper.setFont(Font.font("Arial", 12));
 
@@ -604,7 +604,7 @@ public class Controller {
      * Restores the UI to its default state and redraws the canvas.
      */
     @FXML
-    private void resetSelection() {
+    public void resetSelection() {
         // Clear the selected component and diagram key
         selectedComponent = null;
         selectedDiagramKey = null;
@@ -637,7 +637,7 @@ public class Controller {
      * @param event the ScrollEvent triggered by the user's scrolling action
      */
 
-    private void handleZoom(ScrollEvent event) {
+    public void handleZoom(ScrollEvent event) {
         if (event.isControlDown()) { // Check if Ctrl is held down
             double zoomFactor = (event.getDeltaY() > 0) ? 1.1 : 0.9;
 
@@ -669,7 +669,7 @@ public class Controller {
      * the dialog is simply closed without taking further action.
      */
     @FXML
-    private void handleCloseAction() {
+    public void handleCloseAction() {
         // Create a confirmation dialog
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Exit Confirmation");
@@ -692,7 +692,7 @@ public class Controller {
      * Resets the selected component and diagram key, then redraws the canvas
      * to remove any highlighting or visual indicators of selection.
      */
-    private void clearSelection() {
+    public void clearSelection() {
         selectedComponent = null; // Clear the selected component (class or line)
         selectedDiagramKey = null; // Clear the selected diagram key
         GraphicsContext gc = ((Canvas) canvasContainer.getChildren().get(0)).getGraphicsContext2D();
@@ -706,7 +706,7 @@ public class Controller {
      *
      * @param event the KeyEvent triggered by the user's keyboard input
      */
-    private void handleZoomKeys(KeyEvent event) {
+    public void handleZoomKeys(KeyEvent event) {
         if (event.isControlDown()) {
             if (event.getCode() == KeyCode.ADD ) {
                 // Zoom in
@@ -729,7 +729,7 @@ public class Controller {
      * @param clickedButton the button that was clicked
      * @param buttons a list of all toolbar buttons for deselection
      */
-    private void handleButtonClick(Button clickedButton, List<Button> buttons) {
+    public void handleButtonClick(Button clickedButton, List<Button> buttons) {
         if (activeButton == clickedButton) {
             // If the clicked button is already active, deselect it
             clickedButton.getStyleClass().remove("tool-button-selected");
@@ -753,7 +753,7 @@ public class Controller {
      *
      * @param buttons the list of toolbox buttons to deselect
      */
-    private void deselectAllButtons(List<Button> buttons) {
+    public void deselectAllButtons(List<Button> buttons) {
         for (Button button : buttons) {
             // Remove the "tool-button-selected" style class
             button.getStyleClass().remove("tool-button-selected");
@@ -772,7 +772,7 @@ public class Controller {
      *
      * @param gc the GraphicsContext of the canvas where the grid is drawn
      */
-    private void drawGrid(GraphicsContext gc) {
+    public void drawGrid(GraphicsContext gc) {
         double canvasWidth = canvasContainer.getWidth();
         double canvasHeight = canvasContainer.getHeight();
 
@@ -800,7 +800,7 @@ public class Controller {
      * @param x the x-coordinate where the class diagram should be placed
      * @param y the y-coordinate where the class diagram should be placed
      */
-    private void createClassDiagram(GraphicsContext gc, double x, double y) {
+    public void createClassDiagram(GraphicsContext gc, double x, double y) {
         String key = "Class" + x + "," + y;
         if (!diagrams.containsKey(key)) {
             diagrams.put(key, new ClassDiagram(x, y)); // Create and store a new class diagram
@@ -819,7 +819,7 @@ public class Controller {
      * @param gc           the {@link GraphicsContext} used for drawing
      * @param classDiagram the {@link ClassDiagram} to be drawn, containing coordinates, dimensions, and content
      */
-    private void drawClassDiagram(GraphicsContext gc, ClassDiagram classDiagram) {
+    public void drawClassDiagram(GraphicsContext gc, ClassDiagram classDiagram) {
         double x = classDiagram.x;
         double y = classDiagram.y;
 
@@ -915,7 +915,7 @@ public class Controller {
      * @param classDiagram the {@link ClassDiagram} whose text content is analyzed
      * @return the maximum width of the text in the class diagram
      */
-    private double getMaxTextWidth(GraphicsContext gc, ClassDiagram classDiagram) {
+    public double getMaxTextWidth(GraphicsContext gc, ClassDiagram classDiagram) {
         Text textHelper = new Text();
         textHelper.setFont(Font.font("Arial", 12));
 
@@ -950,7 +950,7 @@ public class Controller {
      * @param mouseX the X-coordinate of the mouse click
      * @param mouseY the Y-coordinate of the mouse click
      */
-    private void selectDiagram(double mouseX, double mouseY) {
+    public void selectDiagram(double mouseX, double mouseY) {
         // Reset selection
         selectedDiagramKey = null;
         selectedComponent = null;
@@ -986,7 +986,7 @@ public class Controller {
      * @param mouseY the Y-coordinate of the mouse position
      * @return {@code true} if the mouse position is in an empty area, {@code false} otherwise
      */
-    private boolean isEmptyArea(double mouseX, double mouseY) {
+    public boolean isEmptyArea(double mouseX, double mouseY) {
         // Check if mouse is near any class diagram
         for (ClassDiagram diagram : diagrams.values()) {
             if (mouseX >= diagram.x && mouseX <= diagram.x + diagram.width &&
@@ -1021,7 +1021,7 @@ public class Controller {
      *
      * @param event the {@link MouseEvent} representing the mouse press action
      */
-    private void onMousePressed(MouseEvent event) {
+    public void onMousePressed(MouseEvent event) {
         GraphicsContext gc = ((Canvas) canvasContainer.getChildren().get(0)).getGraphicsContext2D();
 
         // Handle double-click for editing line text
@@ -1141,7 +1141,7 @@ public class Controller {
      * data structures to reflect the changes and redraws the canvas to ensure the UI is consistent.</p>
      */
     @FXML
-    private void deleteSelectedComponent() {
+    public void deleteSelectedComponent() {
         GraphicsContext gc = ((Canvas) canvasContainer.getChildren().get(0)).getGraphicsContext2D();
 
         if (selectedComponent instanceof ClassDiagram) {
@@ -1178,7 +1178,7 @@ public class Controller {
      *
      * @param event the {@link MouseEvent} representing the mouse drag action
      */
-    private void onMouseDragged(MouseEvent event) {
+    public void onMouseDragged(MouseEvent event) {
         GraphicsContext gc = ((Canvas) canvasContainer.getChildren().get(0)).getGraphicsContext2D();
 
         if (activeButton == null) {
@@ -1241,7 +1241,7 @@ public class Controller {
      * @param event the {@link MouseEvent} representing the mouse click
      * @param gc the {@link GraphicsContext} for redrawing the canvas
      */
-    private void handleClassEditing(MouseEvent event, GraphicsContext gc) {
+    public void handleClassEditing(MouseEvent event, GraphicsContext gc) {
         for (Map.Entry<String, ClassDiagram> entry : diagrams.entrySet()) {
             ClassDiagram diagram = entry.getValue();
             double mouseX = event.getX();
@@ -1309,7 +1309,7 @@ public class Controller {
      * @param index the index of the attribute in the list of attributes
      * @param gc the {@link GraphicsContext} for redrawing the canvas
      */
-    private void editAttribute(ClassDiagram classDiagram, int index, GraphicsContext gc) {
+    public void editAttribute(ClassDiagram classDiagram, int index, GraphicsContext gc) {
         double startY = classDiagram.y + 30 + index * 20; // Position of the attribute row
         String attribute = classDiagram.attributes.get(index);
 
@@ -1353,7 +1353,7 @@ public class Controller {
      * @param index the index of the operation in the list of operations
      * @param gc the {@link GraphicsContext} for redrawing the canvas
      */
-    private void editOperation(ClassDiagram classDiagram, int index, GraphicsContext gc) {
+    public void editOperation(ClassDiagram classDiagram, int index, GraphicsContext gc) {
         double attributeHeight = 20 * classDiagram.attributes.size();
         double startY = classDiagram.y + 30 + attributeHeight + 20 + index * 20; // Position of the operation row
         String operation = classDiagram.operations.get(index);
@@ -1398,7 +1398,7 @@ public class Controller {
      * @param diagram the {@link ClassDiagram} or {@link InterfaceDiagram} whose name is being edited
      * @param gc the {@link GraphicsContext} for redrawing the canvas
      */
-    private void editClassName(ClassDiagram diagram, GraphicsContext gc) {
+    public void editClassName(ClassDiagram diagram, GraphicsContext gc) {
         String currentName;
         double x, y, width;
 
@@ -1478,7 +1478,7 @@ public class Controller {
      * @return the UML symbol for the access modifier ("+", "-", "#", or "~"),
      *         or an empty string if the access modifier is unrecognized
      */
-    private String getAccessModifierSymbol(String accessModifier) {
+    public String getAccessModifierSymbol(String accessModifier) {
         switch (accessModifier.toLowerCase()) {
             case "public":
                 return "+";
@@ -1502,7 +1502,7 @@ public class Controller {
      *
      * @param event the {@link MouseEvent} representing the mouse release action
      */
-    private void onMouseReleased(MouseEvent event) {
+    public void onMouseReleased(MouseEvent event) {
         GraphicsContext gc = ((Canvas) canvasContainer.getChildren().get(0)).getGraphicsContext2D();
 
         if (isDrawingLine) {
@@ -1555,7 +1555,7 @@ public class Controller {
      * @param y the y-coordinate of the reference point
      * @return the index of the nearest connection point, or -1 if no point is found
      */
-    private int getNearestConnectionIndex(ClassDiagram diagram, double x, double y) {
+    public int getNearestConnectionIndex(ClassDiagram diagram, double x, double y) {
         double[][] connectionPoints = diagram.getConnectionPoints();
         for (int i = 0; i < connectionPoints.length; i++) {
             if (isNear(x, y, connectionPoints[i][0], connectionPoints[i][1])) {
@@ -1576,7 +1576,7 @@ public class Controller {
      * @param lineType the {@link Button} representing the selected line type
      * @return {@code true} if the connection is invalid, {@code false} otherwise
      */
-    private boolean isInvalidLineConnection(ClassDiagram startDiagram, ClassDiagram endDiagram, Button lineType) {
+    public boolean isInvalidLineConnection(ClassDiagram startDiagram, ClassDiagram endDiagram, Button lineType) {
         // Check if either diagram is an interface
         boolean startIsInterface = startDiagram instanceof InterfaceDiagram;
         boolean endIsInterface = endDiagram instanceof InterfaceDiagram;
@@ -1598,7 +1598,7 @@ public class Controller {
      * reinitializes necessary fields, and redraws the canvas.</p>
      */
     @FXML
-    private void loadDiagramFromFile() {
+    public void loadDiagramFromFile() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Load Diagram");
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Diagram Files", "*.diagram"));
@@ -1632,7 +1632,7 @@ public class Controller {
      * <p>This method serializes the diagram data into a file with a ".diagram" extension.</p>
      */
     @FXML
-    private void saveDiagramToFile() {
+    public void saveDiagramToFile() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Save Diagram");
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Diagram Files", "*.diagram"));
@@ -1656,7 +1656,7 @@ public class Controller {
      *
      * @param message the message to display
      */
-    private void showInfo(String message) {
+    public void showInfo(String message) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Information");
         alert.setHeaderText(null);
@@ -1669,7 +1669,7 @@ public class Controller {
      *
      * @param message the error message to display
      */
-    private void showError(String message) {
+    public void showError(String message) {
         javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR);
         alert.setTitle("Invalid Connection");
         alert.setHeaderText(null);
@@ -1682,7 +1682,7 @@ public class Controller {
      *
      * @param gc the {@link GraphicsContext} used for drawing
      */
-    private void redrawDiagrams(GraphicsContext gc) {
+    public void redrawDiagrams(GraphicsContext gc) {
         for (ClassDiagram diagram : diagrams.values()) {
             drawClassDiagram(gc, diagram);
         }
@@ -1692,7 +1692,7 @@ public class Controller {
      * Exports the canvas content as a JPEG image file.
      */
     @FXML
-    private void exportAsJPEG() {
+    public void exportAsJPEG() {
         saveCanvasToFile("jpeg");
     }
 
@@ -1700,7 +1700,7 @@ public class Controller {
      * Exports the canvas content as a PNG image file.
      */
     @FXML
-    private void exportAsPNG() {
+    public void exportAsPNG() {
         saveCanvasToFile("png");
     }
 
@@ -1713,7 +1713,7 @@ public class Controller {
      *
      * @param format the file format to save the image in (e.g., "jpeg", "png")
      */
-    private void saveCanvasToFile(String format) {
+    public void saveCanvasToFile(String format) {
         Canvas canvas = (Canvas) canvasContainer.getChildren().get(0);
 
         // Take a snapshot of the canvas
@@ -1759,7 +1759,7 @@ public class Controller {
      * @param writableImage the {@link WritableImage} to convert
      * @return the resulting {@link BufferedImage}
      */
-    private BufferedImage convertToBufferedImage(WritableImage writableImage) {
+    public BufferedImage convertToBufferedImage(WritableImage writableImage) {
         int width = (int) writableImage.getWidth();
         int height = (int) writableImage.getHeight();
 
@@ -1782,7 +1782,7 @@ public class Controller {
      * @param originalImage the original {@link BufferedImage} with an alpha channel
      * @return a new {@link BufferedImage} without an alpha channel
      */
-    private BufferedImage removeAlphaChannel(BufferedImage originalImage) {
+    public BufferedImage removeAlphaChannel(BufferedImage originalImage) {
         BufferedImage rgbImage = new BufferedImage(
                 originalImage.getWidth(),
                 originalImage.getHeight(),
@@ -1804,7 +1804,7 @@ public class Controller {
      * @param gc the {@link GraphicsContext} used to redraw the canvas
      */
     @FXML
-    private void onAddAttribute(GraphicsContext gc) {
+    public void onAddAttribute(GraphicsContext gc) {
         if (selectedDiagramKey != null) {
             ClassDiagram diagram = diagrams.get(selectedDiagramKey);
             String attributeName = attributesField.getText().trim();
@@ -1833,7 +1833,7 @@ public class Controller {
      * @param gc the {@link GraphicsContext} used to redraw the canvas
      */
     @FXML
-    private void onAddOperation(GraphicsContext gc) {
+    public void onAddOperation(GraphicsContext gc) {
         if (selectedDiagramKey != null) {
             ClassDiagram diagram = diagrams.get(selectedDiagramKey);
             String operationName = operationsField.getText().trim();
@@ -1861,7 +1861,7 @@ public class Controller {
      *
      * @param gc the {@link GraphicsContext} used for drawing
      */
-    private void redrawCanvas(GraphicsContext gc) {
+    public void redrawCanvas(GraphicsContext gc) {
         Canvas canvas = (Canvas) canvasContainer.getChildren().get(0);
         gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
         drawGrid(gc);
@@ -1941,7 +1941,7 @@ public class Controller {
      * @param triangleSize the size of the triangle base.
      * @return an array [x, y] representing the intersection point.
      */
-    private double[] calculateTriangleBaseIntersection(double[] end, double[] start, double triangleSize) {
+    public double[] calculateTriangleBaseIntersection(double[] end, double[] start, double triangleSize) {
         double angle = Math.atan2(end[1] - start[1], end[0] - start[0]);
         double intersectionX = end[0] - triangleSize * Math.cos(angle);
         double intersectionY = end[1] - triangleSize * Math.sin(angle);
@@ -1956,7 +1956,7 @@ public class Controller {
      * @param diamondSize the size of the diamond base.
      * @return an array [x, y] representing the intersection point.
      */
-    private double[] calculateDiamondBaseIntersection(double[] end, double[] start, double diamondSize) {
+    public double[] calculateDiamondBaseIntersection(double[] end, double[] start, double diamondSize) {
         double angle = Math.atan2(end[1] - start[1], end[0] - start[0]);
         double intersectionX = end[0] - 2 * diamondSize * Math.cos(angle);
         double intersectionY = end[1] - 2 * diamondSize * Math.sin(angle);
@@ -1973,7 +1973,7 @@ public class Controller {
      * @param startY     the y-coordinate of the line's starting point.
      * @param isSelected whether the triangle is selected, affecting its appearance.
      */
-    private void drawHollowTriangle(GraphicsContext gc, double endX, double endY, double startX, double startY, boolean isSelected) {
+    public void drawHollowTriangle(GraphicsContext gc, double endX, double endY, double startX, double startY, boolean isSelected) {
         double triangleSize = 15; // Size of the triangle
 
         // Calculate the angle of the line
@@ -2003,7 +2003,7 @@ public class Controller {
      * @param line    the {@code LineConnection} object to edit.
      * @param gc      the {@code GraphicsContext} used for redrawing.
      */
-    private void showLineTextField(double mouseX, double mouseY, LineConnection line, GraphicsContext gc) {
+    public void showLineTextField(double mouseX, double mouseY, LineConnection line, GraphicsContext gc) {
         // Calculate the midpoint of the line
         double[] start = line.getStartPoint();
         double[] end = line.getEndPoint();
@@ -2048,7 +2048,7 @@ public class Controller {
      * @param line   the {@code LineConnection} object to check.
      * @return {@code true} if the point is near the line; {@code false} otherwise.
      */
-    private boolean isNearLine(double mouseX, double mouseY, LineConnection line) {
+    public boolean isNearLine(double mouseX, double mouseY, LineConnection line) {
         List<double[]> points = new ArrayList<>();
         points.add(line.getStartPoint()); // Add starting point
         points.addAll(line.controlPoints); // Add all control points
@@ -2079,7 +2079,7 @@ public class Controller {
      * @param y2 the y-coordinate of the endpoint of the segment.
      * @return the shortest distance from the point to the segment.
      */
-    private double pointToSegmentDistance(double px, double py, double x1, double y1, double x2, double y2) {
+    public double pointToSegmentDistance(double px, double py, double x1, double y1, double x2, double y2) {
         double lineLengthSquared = Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2);
 
         if (lineLengthSquared == 0) {
@@ -2110,7 +2110,7 @@ public class Controller {
      * @param isSelected whether the diamond is selected, affecting its appearance.
      * @param filled     whether the diamond should be filled with color.
      */
-    private void drawDiamond(GraphicsContext gc, double endX, double endY, double startX, double startY, boolean isSelected, boolean filled) {
+    public void drawDiamond(GraphicsContext gc, double endX, double endY, double startX, double startY, boolean isSelected, boolean filled) {
         double diamondSize = 15; // Size of the diamond
         Color fillColor = isSelected ? Color.web("#5DADE2") : Color.BLACK; // Use the attribute button color for selected lines
         Color borderColor = isSelected ? Color.web("#5DADE2"): Color.BLACK; // Use blue for the border if selected
@@ -2151,7 +2151,7 @@ public class Controller {
      * @param y2 the y-coordinate of the second point.
      * @return {@code true} if the two points are within the snap radius; {@code false} otherwise.
      */
-    private boolean isNear(double x1, double y1, double x2, double y2) {
+    public boolean isNear(double x1, double y1, double x2, double y2) {
         double tolerance = 10.0; // Snap radius
         return Math.abs(x1 - x2) < tolerance && Math.abs(y1 - y2) < tolerance;
     }
@@ -2159,7 +2159,7 @@ public class Controller {
     /**
      * Initializes the buttons for each {@code LineConnection} in the diagram.
      */
-    private void initializeConnections() {
+    public void initializeConnections() {
         for (LineConnection line : lineConnections) {
             line.initializeButton(aggregationButton, compositionButton, associationButton, InheritanceButton);
         }
@@ -2172,7 +2172,7 @@ public class Controller {
      * for each class or interface in the UML diagram, saving them as .java files.
      */
     @FXML
-    private void exportToJavaCode() {
+    public void exportToJavaCode() {
         DirectoryChooser directoryChooser = new DirectoryChooser();
         directoryChooser.setTitle("Select Output Folder");
         File folder = directoryChooser.showDialog(canvasContainer.getScene().getWindow());
@@ -2206,7 +2206,7 @@ public class Controller {
      * @param declaration the UML declaration string.
      * @return the parsed Java declaration as a string.
      */
-    private String parseAccessModifier(String declaration) {
+    public String parseAccessModifier(String declaration) {
         String trimmed = declaration.trim();
         String accessModifier = "";
 
@@ -2238,7 +2238,7 @@ public class Controller {
      * @param attribute the UML attribute declaration.
      * @return the parsed Java attribute declaration as a string, or a comment if invalid.
      */
-    private String parseAttribute(String attribute) {
+    public String parseAttribute(String attribute) {
         // Extract the parts of the attribute in the format: accessModifier name:type
         String[] parts = attribute.split(":");
         if (parts.length == 2) {
@@ -2264,7 +2264,7 @@ public class Controller {
      * @param operation the UML operation declaration.
      * @return the parsed Java method implementation as a string, or a comment if the format is invalid.
      */
-    private String parseOperation(String operation) {
+    public String parseOperation(String operation) {
         String[] parts = operation.split(":");
         if (parts.length == 2) {
             String declaration = parts[0].trim(); // Example: "+ anyfunction(String id,String name)"
@@ -2412,7 +2412,7 @@ public class Controller {
      * @param operation the UML operation declaration.
      * @return the parsed Java interface method signature as a string, or a comment if the format is invalid.
      */
-    private String parseInterfaceOperation(String operation) {
+    public String parseInterfaceOperation(String operation) {
         String[] parts = operation.split(":");
         if (parts.length == 2) {
             String declaration = parts[0].trim(); // Example: "+ anyfunction(String id,String name)"
@@ -2452,7 +2452,7 @@ public class Controller {
         String className = "Class"; // Default class name
 
         /** Serialization version ID for compatibility. */
-        private static final long serialVersionUID = 1L;
+        public static final long serialVersionUID = 1L;
 
         /**
          * Constructs a ClassDiagram with specified coordinates.
@@ -2519,7 +2519,7 @@ public class Controller {
      * Represents a connection (e.g., line) between two class diagrams.
      * Supports different connection types such as association, inheritance, aggregation, etc.
      */
-    private static class LineConnection implements Serializable {
+    public static class LineConnection implements Serializable {
 
         /** The starting diagram for the connection. */
         ClassDiagram startDiagram;
@@ -2549,7 +2549,7 @@ public class Controller {
         List<double[]> controlPoints = new ArrayList<>(); // Intermediate control points
 
         /** Serialization version ID for compatibility. */
-        private static final long serialVersionUID = 1L;
+        public static final long serialVersionUID = 1L;
 
         /**
          * Constructs a LineConnection between two class diagrams with specified connection points and line type.
@@ -2611,7 +2611,7 @@ public class Controller {
          * @param associationButton the button for Association
          * @param inheritanceButton the button for Inheritance
          */
-        private void initializeButton(Button aggregationButton, Button compositionButton,
+        public void initializeButton(Button aggregationButton, Button compositionButton,
                                       Button associationButton, Button inheritanceButton) {
             if (lineType == null && lineTypeText != null) {
                 if ("Aggregation".equals(lineTypeText)) {
@@ -2637,7 +2637,7 @@ public class Controller {
         String interfaceName = "Interface"; // Default interface name
 
         /** Serialization version ID for compatibility. */
-        private static final long serialVersionUID = 1L;
+        public static final long serialVersionUID = 1L;
 
         /**
          * Constructs an InterfaceDiagram with specified coordinates.
