@@ -77,7 +77,8 @@ public class Controller {
     VBox toolboxVBox;
 
     /** Button for deleting selected components. */
-    @FXML   private Button deleteButton;
+    @FXML
+    Button deleteButton;
 
     /** Button to create a new class diagram. */
     @FXML
