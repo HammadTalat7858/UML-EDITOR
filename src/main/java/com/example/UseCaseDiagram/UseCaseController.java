@@ -63,15 +63,15 @@ public class UseCaseController {
 
     /** Button for creating an actor element. */
     @FXML
-    private Button actorButton;
+    Button actorButton;
 
     /** Container pane for the canvas where diagrams are drawn. */
     @FXML
-    private Pane canvasContainer;
+    Pane canvasContainer;
 
     /** VBox layout for the toolbox panel. */
     @FXML
-    private VBox toolboxVBox;
+    VBox toolboxVBox;
 
     /** VBox layout for the properties panel. */
     @FXML
@@ -89,7 +89,7 @@ public class UseCaseController {
     private Button activeButton;
 
     /** List to store all created actor elements. */
-    private List<Actor> actors = new ArrayList<>();
+    List<Actor> actors = new ArrayList<>();
 
     /** The currently selected actor in the diagram. */
     private Actor selectedActor = null;
@@ -102,10 +102,10 @@ public class UseCaseController {
 
     /** Button for creating a use case element. */
     @FXML
-    private Button useCaseButton;
+    Button useCaseButton;
 
     /** List to store all created use case elements. */
-    private List<UseCase> useCases = new ArrayList<>();
+    List<UseCase> useCases = new ArrayList<>();
 
     /** The currently selected use case in the diagram. */
     private UseCase selectedUseCase = null;
@@ -119,7 +119,7 @@ public class UseCaseController {
 
     /** Button for creating a subject element. */
     @FXML
-    private Button subjectButton;
+    Button subjectButton;
 
     /** State flag indicating whether an association is being drawn. */
     private boolean isDrawingAssociation = false;
@@ -149,7 +149,7 @@ public class UseCaseController {
     private int startConnectionIndex = -1;
 
     /** List to store all created subject elements. */
-    private List<UseCaseSubject> subjects = new ArrayList<>();
+    List<UseCaseSubject> subjects = new ArrayList<>();
 
     /** The currently selected subject element in the diagram. */
     private UseCaseSubject selectedSubject = null;
@@ -179,7 +179,7 @@ public class UseCaseController {
 
     /** Button for deleting selected elements in the diagram. */
     @FXML
-    private Button deleteButton;
+    Button deleteButton;
 
     /** Menu item for saving the diagram. */
     @FXML
@@ -2080,6 +2080,10 @@ public class UseCaseController {
 
         // Position the text centered horizontally relative to the actor figure
         gc.fillText(actor.getName(), x - textWidth / 2, y + 40); // 40px below the actor's head
+    }
+
+    public void clear() {
+
     }
 
 
