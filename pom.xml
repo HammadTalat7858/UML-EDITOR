@@ -5,10 +5,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.example</groupId>
-    <artifactId>UseCase</artifactId>
+    <artifactId>5thSem-SCD-UML-EDITOR-PROJECT</artifactId>
     <version>1.0-SNAPSHOT</version>
-    <name>UseCase</name>
-
+    <name>SCD-UML</name>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <junit.version>5.10.2</junit.version>
