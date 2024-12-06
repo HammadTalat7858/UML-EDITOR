@@ -223,6 +223,60 @@ public class ClassDiagram_Testing extends ApplicationTest {
 
 
     }
+    ////errors
+//    @Test
+//    void testGenerateCode() {
+//        // Step 1: Click on the class button in the toolbox
+//        clickOn(controller.classButton);
+//
+//        // Step 2: Move to the canvas and draw the class diagram
+//        Canvas canvas = (Canvas) controller.canvasContainer.getChildren().get(0);
+//        assertNotNull(canvas);
+//        moveTo(canvas);
+//        moveBy(150, 250); // Move to the desired location on the canvas
+//        clickOn(); // Create the class diagram
+//
+//        // Step 3: Deselect the class button by clicking an empty area in the toolbox
+//        moveTo(controller.toolboxVBox); // Move to the toolbox VBox
+//        moveBy(0, -200); // Adjust to move above all buttons (fine-tune if needed)
+//        clickOn(); // Deselect the button
+//
+//        // Step 4: Select the class diagram by clicking on it
+//        moveTo(canvas);
+//        moveBy(150, 250); // Go to the previously clicked location
+//        clickOn(); // Select the class diagram (should turn blue)
+//
+//        // Step 5: Add an operation to the selected class diagram
+//        clickOn(controller.operationsField);
+//        write("operationName()");
+//        clickOn(controller.operationAccessModifier);
+//        type(KeyCode.DOWN); // Select 'private'
+//        type(KeyCode.ENTER);
+//        clickOn(controller.addOperationButton);
+//
+//        // Step 6: Verify the operation was added correctly
+//        String expectedKey = String.format("Class%.1f,%.1f", 530.4, 636.0); // Adjust logic as needed
+//        assertTrue(controller.diagrams.containsKey(expectedKey));
+//        Controller.ClassDiagram classDiagram = controller.diagrams.get(expectedKey);
+//        assertNotNull(classDiagram);
+//        assertEquals(1, classDiagram.operations.size());
+//        assertEquals("+ operationName()", classDiagram.operations.getFirst());
+//
+//        // Step 7: Open the "Generate Code" menu and click on the "JAVA" menu item
+//        moveTo(".menu-bar > .menu:nth-child(3)"); // Adjust the selector for the Tools menu
+//        clickOn(); // Open the Tools menu
+//        moveTo(".menu-item"); // Move to the Generate Code menu item
+//        clickOn(); // Trigger the Generate Code action
+//
+//        // Step 8: Verify the code generation logic
+//        String generatedCode = controller.generateClassCode(classDiagram); // Pass the specific diagram to the method
+//        assertNotNull(generatedCode, "Generated code should not be null!");
+//        assertTrue(generatedCode.contains("public class"), "Generated code does not contain the expected class declaration!");
+//        assertTrue(generatedCode.contains("+ operationName()"), "Generated code does not contain the expected operation!");
+//
+//        // (Optional) Print or log the generated code for verification
+//        System.out.println("Generated Code:\n" + generatedCode);
+//    }
 
 
 
