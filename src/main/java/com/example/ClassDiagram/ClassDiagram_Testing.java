@@ -140,6 +140,90 @@ public class ClassDiagram_Testing extends ApplicationTest {
 //        assertTrue(controller.lineConnections.size() >= 0);
 //        assertEquals(1, controller.lineConnections.size()); // We expect only one connection line
 //    }
+    @Test
+    void testAddAttribute()
+    {
+        // Step 1: Click on the class button in the toolbox
+        clickOn(controller.classButton);
+
+        // Step 2: Move to the canvas and draw the class diagram
+        Canvas canvas = (Canvas) controller.canvasContainer.getChildren().get(0);
+        assertNotNull(canvas);
+        moveTo(canvas);
+        moveBy(150, 250); // Move to the desired location on the canvas
+        clickOn(); // Create the class diagram
+
+        // Step 3: Deselect the class button by clicking an empty area in the toolbox
+        moveTo(controller.toolboxVBox); // Move to the toolbox VBox
+        moveBy(0, -200); // Adjust to move above all buttons (fine-tune if needed)
+        clickOn(); // Deselect the button
+
+        // Step 4: Select the class diagram by clicking on it
+        moveTo(canvas);
+        moveBy(150, 250); // Go to the previously clicked location
+        clickOn(); // Select the class diagram (should turn blue)
+
+        // Step 5: Add an attribute to the selected class diagram
+        clickOn(controller.attributesField);
+        write("attributeName");
+        clickOn(controller.attributeAccessModifier);
+        type(KeyCode.DOWN); // Select 'private'
+        type(KeyCode.ENTER);
+        clickOn(controller.addAttributeButton);
+        System.out.println("Existing keys in diagrams: " + controller.diagrams.keySet());
+        // Step 6: Verify the attribute was added correctly
+
+        String expectedKey = String.format("Class%.1f,%.1f", 530.4,636.0);//passed changing the logic
+        assertTrue(controller.diagrams.containsKey(expectedKey));
+        Controller.ClassDiagram classDiagram = controller.diagrams.get(expectedKey);
+        assertNotNull(classDiagram);
+        assertEquals(1, classDiagram.attributes.size());
+        assertEquals("+ attributeName", classDiagram.attributes.getFirst());
+
+    }
+    @Test
+    void testAddOperation()
+    {
+        // Step 1: Click on the class button in the toolbox
+        clickOn(controller.classButton);
+
+        // Step 2: Move to the canvas and draw the class diagram
+        Canvas canvas = (Canvas) controller.canvasContainer.getChildren().get(0);
+        assertNotNull(canvas);
+        moveTo(canvas);
+        moveBy(150, 250); // Move to the desired location on the canvas
+        clickOn(); // Create the class diagram
+
+        // Step 3: Deselect the class button by clicking an empty area in the toolbox
+        moveTo(controller.toolboxVBox); // Move to the toolbox VBox
+        moveBy(0, -200); // Adjust to move above all buttons (fine-tune if needed)
+        clickOn(); // Deselect the button
+
+        // Step 4: Select the class diagram by clicking on it
+        moveTo(canvas);
+        moveBy(150, 250); // Go to the previously clicked location
+        clickOn(); // Select the class diagram (should turn blue)
+
+        // Step 5: Add an attribute to the selected class diagram
+        clickOn(controller.operationsField);
+        write("operationName");
+        clickOn(controller.operationAccessModifier);
+        type(KeyCode.DOWN); // Select 'private'
+        type(KeyCode.ENTER);
+        clickOn(controller.addOperationButton);
+        ///System.out.println("Existing keys in diagrams: " + controller.diagrams.keySet());
+        // Step 6: Verify the attribute was added correctly
+
+        String expectedKey = String.format("Class%.1f,%.1f", 530.4,636.0);//passed changing the logic
+        assertTrue(controller.diagrams.containsKey(expectedKey));
+        Controller.ClassDiagram classDiagram = controller.diagrams.get(expectedKey);
+        assertNotNull(classDiagram);
+        assertEquals(1, classDiagram.operations.size());
+        assertEquals("+ operationName", classDiagram.operations.getFirst());
+
+
+    }
+
 
 
 
