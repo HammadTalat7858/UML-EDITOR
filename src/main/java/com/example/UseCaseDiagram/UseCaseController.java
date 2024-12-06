@@ -18,95 +18,204 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-
 import javafx.scene.image.PixelReader;
 import javafx.scene.image.WritableImage;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.Optional;
 
+/**
+ * Controller class for managing the logic and operations related to the Use Case Diagram
+ * in the UML Editor.
+ *
+ * <p>This class handles all the logical functionality associated with the Use Case Diagram,
+ * including the management of UML model components such as actors, use cases, and their
+ * relationships (e.g., associations, extensions, inclusions). It bridges the UI and
+ * business logic layers.</p>
+ *
+ * <p>Responsibilities of this class include:</p>
+ * <ul>
+ *   <li>Creating and updating UML components in the use case diagram.</li>
+ *   <li>Validating relationships and constraints, such as extensions and inclusions.</li>
+ *   <li>Saving and loading use case diagram data as part of a project.</li>
+ *   <li>Providing export functionality for visual artifacts (e.g., PNG, JPEG).</li>
+ * </ul>
+ *
+ * <p>Constraints:</p>
+ * <ul>
+ *   <li>Implements relevant design patterns to ensure modularity and ease of testing.</li>
+ * </ul>
+ *
+ * @author Hammad Tallat
+ * @author Ahmed Moeez
+ * @author Muhammad Hassnain
+ *
+ */
+
 public class UseCaseController {
 
+    /** Button for creating an actor element. */
     @FXML
     private Button actorButton;
+
+    /** Container pane for the canvas where diagrams are drawn. */
     @FXML
     private Pane canvasContainer;
+
+    /** VBox layout for the toolbox panel. */
     @FXML
     private VBox toolboxVBox;
 
+    /** VBox layout for the properties panel. */
     @FXML
     private VBox propertiesPanel;
+
+    /** Menu item for exporting the diagram as a JPEG file. */
     @FXML
     private MenuItem jpegMenuItem;
 
+    /** Menu item for exporting the diagram as a PNG file. */
     @FXML
     private MenuItem pngMenuItem;
 
+    /** The currently active button in the toolbar. */
     private Button activeButton;
 
-    // List to store all created actors
+    /** List to store all created actor elements. */
     private List<Actor> actors = new ArrayList<>();
+
+    /** The currently selected actor in the diagram. */
     private Actor selectedActor = null;
-    private double dragOffsetX, dragOffsetY;
+
+    /** Offset for drag operations along the X-axis. */
+    private double dragOffsetX;
+
+    /** Offset for drag operations along the Y-axis. */
+    private double dragOffsetY;
+
+    /** Button for creating a use case element. */
     @FXML
     private Button useCaseButton;
 
-    // List to store all created use cases
+    /** List to store all created use case elements. */
     private List<UseCase> useCases = new ArrayList<>();
+
+    /** The currently selected use case in the diagram. */
     private UseCase selectedUseCase = null;
+
+    /** The currently selected line connection in the diagram. */
     private LineConnection selectedLine = null;
 
+    /** Button for creating an association relationship. */
     @FXML
     private Button associationButton;
+
+    /** Button for creating a subject element. */
     @FXML
     private Button subjectButton;
 
+    /** State flag indicating whether an association is being drawn. */
+    private boolean isDrawingAssociation = false;
 
+    /** Starting X-coordinate for a line being drawn. */
+    private double startX;
 
-    private boolean isDrawingAssociation = false; // State for association drawing
-    private double startX, startY, endX, endY;    // Line coordinates
+    /** Starting Y-coordinate for a line being drawn. */
+    private double startY;
+
+    /** Ending X-coordinate for a line being drawn. */
+    private double endX;
+
+    /** Ending Y-coordinate for a line being drawn. */
+    private double endY;
+
+    /** Starting actor for an association relationship. */
     private Actor startActor = null;
+
+    /** Starting use case for an association relationship. */
     private UseCase startUseCase = null;
+
+    /** List to store all created association relationships. */
     private List<LineConnection> associations = new ArrayList<>();
+
+    /** Index of the connection point for the starting element of an association. */
     private int startConnectionIndex = -1;
+
+    /** List to store all created subject elements. */
     private List<UseCaseSubject> subjects = new ArrayList<>();
+
+    /** The currently selected subject element in the diagram. */
     private UseCaseSubject selectedSubject = null;
+
+    /** State flag indicating whether a subject is being resized. */
     private boolean isResizingSubject = false;
-    private double resizeOffsetX, resizeOffsetY;
+
+    /** Offset for resizing operations along the X-axis. */
+    private double resizeOffsetX;
+
+    /** Offset for resizing operations along the Y-axis. */
+    private double resizeOffsetY;
+
+    /** Button for creating an include relationship. */
     @FXML
     private Button includeButton;
 
-    // Keep track of whether we are drawing an include relation
+    /** State flag indicating whether an include relationship is being drawn. */
     private boolean isDrawingInclude = false;
+
+    /** Button for creating an extend relationship. */
     @FXML
     private Button extendButton;
 
+    /** State flag indicating whether an extend relationship is being drawn. */
     private boolean isDrawingExtend = false;
+
+    /** Button for deleting selected elements in the diagram. */
     @FXML
     private Button deleteButton;
+
+    /** Menu item for saving the diagram. */
     @FXML
     private MenuItem SaveAs;
 
+    /** Menu item for loading a saved diagram. */
     @FXML
     private MenuItem Load;
 
+    /** Menu item for closing the current diagram. */
     @FXML
     private MenuItem Close;
+
+    /** Menu item for loading a saved use case diagram. */
     @FXML
     private MenuItem loadusecase;
+
+    /** Menu item for loading a saved class diagram. */
     @FXML
     private MenuItem loadClass;
 
-
+    /**
+     * Initializes the Use Case Diagram controller, setting up event listeners,
+     * default configurations, and initial states for the canvas and UI elements.
+     *
+     * <p>This method is automatically called after the FXML file has been loaded
+     * and is responsible for linking the UI components with their functionality.</p>
+     *
+     * <p>Key initialization tasks:</p>
+     * <ul>
+     *   <li>Creates and configures the canvas for drawing use case diagrams.</li>
+     *   <li>Sets up event listeners for user interactions, including mouse and keyboard events.</li>
+     *   <li>Ensures the canvas dynamically adapts to container size changes.</li>
+     *   <li>Initializes grid drawing and handles export options.</li>
+     * </ul>
+     */
     @FXML
     public void initialize() {
         // Create a new canvas and add it to the canvasContainer
@@ -144,9 +253,6 @@ public class UseCaseController {
             }
         });
 
-
-
-
         // Add listeners to ensure the grid is redrawn when the container size changes
         canvasContainer.widthProperty().addListener((observable, oldValue, newValue) -> {
             canvas.setWidth(newValue.doubleValue());
@@ -164,7 +270,6 @@ public class UseCaseController {
                 handleDeleteAction(gc);
             }
         });
-
 
         // Initial grid drawing
         drawGrid(gc);
@@ -191,6 +296,15 @@ public class UseCaseController {
         propertiesPanel.setOnMouseClicked(event -> deselectActiveButton());
     }
 
+    /**
+     * Draws a grid on the canvas for better alignment and layout of diagram elements.
+     *
+     * <p>The grid spacing is configurable and helps users visually organize
+     * components within the diagram. This method ensures the canvas dimensions
+     * are cleared and recalculated before redrawing the grid.</p>
+     *
+     * @param gc the GraphicsContext of the canvas used for drawing the grid
+     */
     private void drawGrid(GraphicsContext gc) {
         // Ensure the canvas dimensions are correct
         double canvasWidth = canvasContainer.getWidth();
@@ -214,6 +328,16 @@ public class UseCaseController {
             gc.strokeLine(0, y, canvasWidth, y);
         }
     }
+
+    /**
+     * Loads the Use Case Diagram view, replacing the current diagram scene.
+     *
+     * <p>This method prompts the user for confirmation before switching, ensuring
+     * unsaved changes are acknowledged. If confirmed, it loads the Use Case Diagram
+     * scene from the FXML file and replaces the current stage's scene.</p>
+     *
+     * <p>Handles errors gracefully by displaying an error message if the switch fails.</p>
+     */
     @FXML
     private void loadUseCaseDiagram() {
         Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION, "Switch to Use Case Diagram? Unsaved changes will be lost.", ButtonType.YES, ButtonType.NO);
@@ -234,6 +358,16 @@ public class UseCaseController {
             }
         }
     }
+
+    /**
+     * Loads the Class Diagram view, replacing the current diagram scene.
+     *
+     * <p>This method prompts the user for confirmation before switching, ensuring
+     * unsaved changes are acknowledged. If confirmed, it loads the Class Diagram
+     * scene from the FXML file and replaces the current stage's scene.</p>
+     *
+     * <p>Handles errors gracefully by displaying an error message if the switch fails.</p>
+     */
     @FXML
     private void loadClassDiagram() {
         Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION, "Switch to Class Diagram? Unsaved changes will be lost.", ButtonType.YES, ButtonType.NO);
@@ -255,7 +389,14 @@ public class UseCaseController {
         }
     }
 
-
+    /**
+     * Handles the event when the "Extend" button is clicked, toggling the active state of the button.
+     *
+     * <p>If the "Extend" button is already active, this method deselects it and clears any active elements
+     * on the canvas. Otherwise, it activates the button to allow the user to draw "Extend" relationships.</p>
+     *
+     * @param gc the GraphicsContext for the canvas where the operations will be performed
+     */
     private void handleExtendButtonClick(GraphicsContext gc) {
         if (activeButton == extendButton) {
             deselectActiveButton();
@@ -264,15 +405,35 @@ public class UseCaseController {
             activateButton(extendButton);
         }
     }
+
+    /**
+     * Exports the current canvas content as a JPEG image file.
+     *
+     * <p>This method uses a file chooser to select the destination and calls {@link #saveCanvasToFile(String)}
+     * with "jpeg" as the format. Handles saving errors gracefully.</p>
+     */
     @FXML
     private void exportAsJPEG() {
         saveCanvasToFile("jpeg");
     }
 
+    /**
+     * Exports the current canvas content as a PNG image file.
+     *
+     * <p>This method uses a file chooser to select the destination and calls {@link #saveCanvasToFile(String)}
+     * with "png" as the format. Handles saving errors gracefully.</p>
+     */
     @FXML
     private void exportAsPNG() {
         saveCanvasToFile("png");
     }
+
+    /**
+     * Handles the close action for the application, displaying a confirmation dialog before exiting.
+     *
+     * <p>If the user confirms, the application exits. If the user cancels, the dialog simply closes without
+     * further action.</p>
+     */
     @FXML
     private void handleCloseAction() {
         // Create a confirmation dialog
@@ -292,7 +453,15 @@ public class UseCaseController {
         }
     }
 
-
+    /**
+     * Saves the current canvas content to a file in the specified format.
+     *
+     * <p>This method creates a snapshot of the canvas and allows the user to save it using a file chooser.
+     * It supports multiple formats (e.g., JPEG, PNG) and handles format-specific adjustments, such as removing
+     * the alpha channel for JPEG images.</p>
+     *
+     * @param format the file format to save the canvas as (e.g., "jpeg", "png")
+     */
     private void saveCanvasToFile(String format) {
         Canvas canvas = (Canvas) canvasContainer.getChildren().get(0);
 
@@ -333,6 +502,15 @@ public class UseCaseController {
         }
     }
 
+    /**
+     * Converts a {@link WritableImage} to a {@link BufferedImage}, preserving its pixel data.
+     *
+     * <p>This method reads pixel data from the {@link WritableImage}'s {@link PixelReader} and writes
+     * it to a new {@link BufferedImage} object.</p>
+     *
+     * @param writableImage the image to be converted
+     * @return a BufferedImage representation of the provided WritableImage
+     */
     private BufferedImage convertToBufferedImage(WritableImage writableImage) {
         int width = (int) writableImage.getWidth();
         int height = (int) writableImage.getHeight();
@@ -350,6 +528,14 @@ public class UseCaseController {
         return bufferedImage;
     }
 
+    /**
+     * Removes the alpha channel from a {@link BufferedImage}, replacing it with a solid white background.
+     *
+     * <p>This method is particularly useful for formats like JPEG that do not support transparency.</p>
+     *
+     * @param originalImage the original image with an alpha channel
+     * @return a new BufferedImage without an alpha channel
+     */
     private BufferedImage removeAlphaChannel(BufferedImage originalImage) {
         BufferedImage rgbImage = new BufferedImage(
                 originalImage.getWidth(),
@@ -362,9 +548,14 @@ public class UseCaseController {
         return rgbImage;
     }
 
-
-
-
+    /**
+     * Deselects the currently active element on the canvas and clears its selection state.
+     *
+     * <p>This method resets the selected actor, use case, subject, and line connection to {@code null}
+     * and triggers a canvas redraw to update the view.</p>
+     *
+     * @param gc the GraphicsContext for the canvas where the operations will be performed
+     */
     private void deselectActiveElement(GraphicsContext gc) {
         // Reset selected elements
         selectedActor = null;
@@ -373,6 +564,16 @@ public class UseCaseController {
         // Redraw canvas
         redrawCanvas(gc);
     }
+
+    /**
+     * Handles the delete action, removing the selected element from the diagram.
+     *
+     * <p>This method supports deletion of actors, use cases, subjects, and line connections,
+     * along with their associated relationships. It also ensures the canvas is redrawn to reflect
+     * the changes.</p>
+     *
+     * @param gc the GraphicsContext for the canvas where the operations will be performed
+     */
     private void handleDeleteAction(GraphicsContext gc) {
         if (selectedLine != null) {
             // Remove the selected line
@@ -405,6 +606,16 @@ public class UseCaseController {
         // Redraw the canvas to reflect deletions
         redrawCanvas(gc);
     }
+
+    /**
+     * Loads a saved diagram from a file and updates the canvas with the loaded data.
+     *
+     * <p>This method uses a file chooser to allow the user to select a diagram file
+     * and deserializes the data into the application's data structures for actors, use cases,
+     * subjects, and connections. It also triggers a canvas redraw to display the loaded diagram.</p>
+     *
+     * <p>Displays error messages in case of exceptions during the loading process.</p>
+     */
     @FXML
     private void loadDiagramFromFile() {
         FileChooser fileChooser = new FileChooser();
@@ -433,6 +644,13 @@ public class UseCaseController {
         }
     }
 
+    /**
+     * Saves the current diagram to a file for later use.
+     *
+     * <p>This method uses a file chooser to allow the user to specify the destination file
+     * and serializes the application's data structures for actors, use cases, subjects,
+     * and connections into the file. Displays success or error messages based on the operation's result.</p>
+     */
     @FXML
     private void saveDiagramToFile() {
         FileChooser fileChooser = new FileChooser();
@@ -455,6 +673,15 @@ public class UseCaseController {
             }
         }
     }
+
+    /**
+     * Displays an informational alert with the specified message.
+     *
+     * <p>This method creates a simple alert dialog box with the provided message to inform the user
+     * about the outcome of an operation (e.g., success or failure).</p>
+     *
+     * @param message the message to display in the alert dialog
+     */
     private void showInfo(String message) {
         javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.INFORMATION);
         alert.setTitle("Information");
@@ -463,7 +690,14 @@ public class UseCaseController {
         alert.showAndWait();
     }
 
-
+    /**
+     * Handles the "Include" button click event, toggling the active state for creating "Include" relationships.
+     *
+     * <p>If the "Include" button is already active, this method deselects it and clears any active elements.
+     * Otherwise, it activates the button to allow drawing "Include" relationships.</p>
+     *
+     * @param gc the GraphicsContext for the canvas where the operations will be performed
+     */
     private void handleIncludeButtonClick(GraphicsContext gc) {
         if (activeButton == includeButton) {
             deselectActiveButton();
@@ -474,7 +708,22 @@ public class UseCaseController {
         }
     }
 
-
+    /**
+     * Handles mouse press events on the canvas, performing various actions based on the current context.
+     *
+     * <p>This method is central to managing user interactions with the canvas, including:
+     * <ul>
+     *   <li>Drawing association, include, and extend lines</li>
+     *   <li>Selecting and editing actors, use cases, subjects, and line connections</li>
+     *   <li>Dragging or resizing subjects</li>
+     *   <li>Highlighting selected elements</li>
+     *   <li>Clearing selection when clicking on empty areas</li>
+     * </ul>
+     * </p>
+     *
+     * @param event the MouseEvent containing details about the mouse press (e.g., position, click count)
+     * @param gc the GraphicsContext used for rendering operations on the canvas
+     */
     private void onMousePressed(MouseEvent event, GraphicsContext gc) {
         double mouseX = event.getX();
         double mouseY = event.getY();
@@ -766,6 +1015,18 @@ public class UseCaseController {
         selectedLine=null;
         redrawCanvas(gc);
     }
+
+    /**
+     * Checks if the mouse is near a given line connection.
+     *
+     * <p>Calculates the perpendicular distance from the mouse pointer to the line
+     * and compares it to a defined tolerance value.</p>
+     *
+     * @param mouseX the X-coordinate of the mouse pointer
+     * @param mouseY the Y-coordinate of the mouse pointer
+     * @param line the line connection to check
+     * @return {@code true} if the mouse is near the line, {@code false} otherwise
+     */
     private boolean isMouseNearLine(double mouseX, double mouseY, LineConnection line) {
         double[] start = line.getStartPoint();
         double[] end = line.getEndPoint();
@@ -778,7 +1039,15 @@ public class UseCaseController {
         return distance <= tolerance;
     }
 
-
+    /**
+     * Enables the user to edit the heading of a Use Case Subject using a text field.
+     *
+     * <p>A temporary {@link TextField} is added to the canvas for editing. Changes are committed
+     * either on pressing Enter or when the field loses focus.</p>
+     *
+     * @param subject the {@link UseCaseSubject} whose heading is to be edited
+     * @param gc the {@link GraphicsContext} for rendering updates
+     */
     private void editSubjectHeading(UseCaseSubject subject, GraphicsContext gc) {
         // Create a TextField for editing the subject's name
         TextField textField = new TextField(subject.name);
@@ -820,11 +1089,31 @@ public class UseCaseController {
         });
     }
 
+    /**
+     * Determines if a point is near a given reference point within a specified tolerance.
+     *
+     * <p>This is useful for detecting mouse clicks near specific connection points
+     * on actors, use cases, or other diagram elements.</p>
+     *
+     * @param mouseX the X-coordinate of the mouse pointer
+     * @param mouseY the Y-coordinate of the mouse pointer
+     * @param pointX the X-coordinate of the reference point
+     * @param pointY the Y-coordinate of the reference point
+     * @return {@code true} if the mouse is within the tolerance of the point, {@code false} otherwise
+     */
     private boolean isNear(double mouseX, double mouseY, double pointX, double pointY) {
         double tolerance = 10.0; // Snap radius
         return Math.abs(mouseX - pointX) < tolerance && Math.abs(mouseY - pointY) < tolerance;
     }
 
+    /**
+     * Handles the logic for toggling the subject button.
+     *
+     * <p>If the subject button is already active, it deselects it and clears any
+     * selected elements. Otherwise, it activates the button for subject creation.</p>
+     *
+     * @param gc the {@link GraphicsContext} for rendering updates
+     */
     private void handleSubjectButtonClick(GraphicsContext gc) {
         if (activeButton == subjectButton) {
             deselectActiveButton();
@@ -835,12 +1124,27 @@ public class UseCaseController {
         }
     }
 
+    /**
+     * Creates a new Use Case Subject at the specified coordinates and draws it on the canvas.
+     *
+     * @param gc the {@link GraphicsContext} for rendering the subject
+     * @param x the X-coordinate of the top-left corner of the subject
+     * @param y the Y-coordinate of the top-left corner of the subject
+     */
     private void createUseCaseSubject(GraphicsContext gc, double x, double y) {
         UseCaseSubject subject = new UseCaseSubject(x, y);
         subjects.add(subject);
         drawUseCaseSubject(gc, subject);
     }
 
+    /**
+     * Draws a Use Case Subject on the canvas, including its rectangle and heading text.
+     *
+     * <p>The heading text is horizontally centered and slightly below the top edge of the rectangle.</p>
+     *
+     * @param gc the {@link GraphicsContext} for rendering the subject
+     * @param subject the {@link UseCaseSubject} to be drawn
+     */
     private void drawUseCaseSubject(GraphicsContext gc, UseCaseSubject subject) {
         // Draw the rectangle for the subject
         gc.setFill(Color.WHITE);
@@ -864,14 +1168,26 @@ public class UseCaseController {
         gc.fillText(subject.name, textX, textY);
     }
 
-
+    /**
+     * Highlights a Use Case Subject by drawing a blue border around it.
+     *
+     * @param gc the {@link GraphicsContext} for rendering the highlight
+     * @param subject the {@link UseCaseSubject} to be highlighted
+     */
     private void highlightUseCaseSubject(GraphicsContext gc, UseCaseSubject subject) {
         gc.setStroke(Color.BLUE);
         gc.setLineWidth(3);
         gc.strokeRect(subject.x - 2, subject.y - 2, subject.width + 4, subject.height + 4);
     }
 
-
+    /**
+     * Handles the logic for toggling the use case button.
+     *
+     * <p>If the button is active, it deselects it and clears any selected elements.
+     * Otherwise, it activates the button for use case creation.</p>
+     *
+     * @param gc the {@link GraphicsContext} for rendering updates
+     */
     private void handleUseCaseButtonClick(GraphicsContext gc) {
         if (activeButton == useCaseButton) {
             deselectActiveButton();
@@ -881,6 +1197,17 @@ public class UseCaseController {
         }
     }
 
+    /**
+     * Checks if the mouse pointer is over a given use case.
+     *
+     * <p>This method considers the oval shape of the use case when determining whether
+     * the mouse pointer is inside its boundaries.</p>
+     *
+     * @param mouseX the X-coordinate of the mouse pointer
+     * @param mouseY the Y-coordinate of the mouse pointer
+     * @param useCase the {@link UseCase} to check
+     * @return {@code true} if the mouse is over the use case, {@code false} otherwise
+     */
     private boolean isMouseOverUseCase(double mouseX, double mouseY, UseCase useCase) {
         double x = useCase.getX();
         double y = useCase.getY();
@@ -893,7 +1220,16 @@ public class UseCaseController {
         return (dx * dx) / (width * width / 4) + (dy * dy) / (height * height / 4) <= 1;
     }
 
-
+    /**
+     * Creates a new use case at the specified coordinates and adds it to the diagram.
+     *
+     * <p>If the coordinates fall within a {@link UseCaseSubject}, the use case is associated with that subject,
+     * and its position is adjusted to stay within the subject's boundaries.</p>
+     *
+     * @param gc the {@link GraphicsContext} for rendering updates
+     * @param x the X-coordinate where the use case is created
+     * @param y the Y-coordinate where the use case is created
+     */
     private void createUseCase(GraphicsContext gc, double x, double y) {
         UseCase useCase = new UseCase(x, y); // Create a new UseCase object
 
@@ -911,6 +1247,15 @@ public class UseCaseController {
         redrawCanvas(gc); // Redraw to reflect the changes
     }
 
+    /**
+     * Highlights a use case by drawing a light blue background around it.
+     *
+     * <p>The highlight is rendered as a filled oval slightly larger than the use case itself.
+     * After highlighting, the use case is redrawn on top to ensure it remains visible.</p>
+     *
+     * @param gc the {@link GraphicsContext} for rendering the highlight
+     * @param useCase the {@link UseCase} to be highlighted
+     */
     private void highlightUseCase(GraphicsContext gc, UseCase useCase) {
         double x = useCase.getX();
         double y = useCase.getY();
@@ -925,6 +1270,15 @@ public class UseCaseController {
         drawUseCase(gc, useCase);
     }
 
+    /**
+     * Draws a use case as an oval with connection points and a label.
+     *
+     * <p>The use case is rendered as a black-bordered oval, with red connection points
+     * indicating possible linkages. The label is centered within the oval.</p>
+     *
+     * @param gc the {@link GraphicsContext} for rendering the use case
+     * @param useCase the {@link UseCase} to be drawn
+     */
     private void drawUseCase(GraphicsContext gc, UseCase useCase) {
         double x = useCase.getX();
         double y = useCase.getY();
@@ -953,7 +1307,16 @@ public class UseCaseController {
         gc.fillText(useCase.getName(), x - textWidth / 2, y + textHeight / 4); // Center the text
     }
 
-
+    /**
+     * Enables editing of the text label for a given use case.
+     *
+     * <p>A {@link TextField} is displayed at the use case's position, allowing the user to modify its name.
+     * Changes are applied when the user presses Enter or the text field loses focus, and the canvas is redrawn
+     * to reflect the updated label.</p>
+     *
+     * @param useCase the {@link UseCase} whose label is to be edited
+     * @param gc the {@link GraphicsContext} for rendering updates
+     */
     private void editUseCaseText(UseCase useCase, GraphicsContext gc) {
         // Create a TextField for editing the use case name
         TextField textField = new TextField(useCase.getName());
@@ -985,6 +1348,16 @@ public class UseCaseController {
         });
     }
 
+    /**
+     * Enables editing of the text label for a given actor.
+     *
+     * <p>A {@link TextField} is displayed near the actor's figure, allowing the user to modify its name.
+     * Changes are applied when the user presses Enter or the text field loses focus, and the canvas is redrawn
+     * to reflect the updated label.</p>
+     *
+     * @param actor the {@link Actor} whose label is to be edited
+     * @param gc the {@link GraphicsContext} for rendering updates
+     */
     private void editActorText(Actor actor, GraphicsContext gc) {
         // Create a TextField for editing the actor name
         TextField textField = new TextField(actor.getName());
@@ -1016,6 +1389,20 @@ public class UseCaseController {
         });
     }
 
+    /**
+     * Handles mouse drag events for various elements on the canvas.
+     *
+     * <p>This method performs actions such as:
+     * <ul>
+     *   <li>Previewing association, include, or extend lines while drawing</li>
+     *   <li>Dragging and repositioning subjects, actors, or use cases</li>
+     *   <li>Resizing subjects while respecting minimum size constraints</li>
+     * </ul>
+     * The canvas is continuously updated to reflect these changes.</p>
+     *
+     * @param event the {@link MouseEvent} containing the current mouse position
+     * @param gc the {@link GraphicsContext} for rendering updates
+     */
     private void onMouseDragged(MouseEvent event, GraphicsContext gc) {
         double mouseX = event.getX();
         double mouseY = event.getY();
@@ -1115,7 +1502,17 @@ public class UseCaseController {
         }
     }
 
-
+    /**
+     * Draws an arrow on the canvas from a start point to an end point.
+     *
+     * <p>The arrow includes a line from the start to the end point, and an arrowhead
+     * at the end point. The arrowhead is drawn at an angle of 30 degrees on each side
+     * of the line.</p>
+     *
+     * @param gc the {@link GraphicsContext} used to draw the arrow
+     * @param start a double array representing the start point of the arrow ([x, y])
+     * @param end a double array representing the end point of the arrow ([x, y])
+     */
     private void drawArrow(GraphicsContext gc, double[] start, double[] end) {
         double arrowLength = 15; // Length of the arrowhead
         double arrowWidth = 7;   // Width of the arrowhead
@@ -1138,6 +1535,21 @@ public class UseCaseController {
         gc.strokeLine(end[0], end[1], x2, y2); // Right side of the arrowhead
     }
 
+    /**
+     * Handles mouse release events for various actions on the canvas.
+     *
+     * <p>This method finalizes actions such as:
+     * <ul>
+     *   <li>Drawing association, include, or extend lines between elements</li>
+     *   <li>Resizing use case subjects</li>
+     *   <li>Positioning actors or use cases</li>
+     * </ul>
+     * It validates the connection points for lines and provides visual feedback if
+     * no valid connection is reached. Finally, the canvas is redrawn to reflect the updates.</p>
+     *
+     * @param event the {@link MouseEvent} containing details about the mouse release
+     * @param gc the {@link GraphicsContext} used to render the updated state
+     */
     private void onMouseReleased(MouseEvent event, GraphicsContext gc) {
         double mouseX = event.getX();
         double mouseY = event.getY();
@@ -1319,8 +1731,19 @@ public class UseCaseController {
         }
     }
 
-// --- Drawing and Helper Methods ---
-
+    /**
+     * Redraws the entire canvas, including the grid, subjects, use cases, actors, and association lines.
+     *
+     * <p>The method ensures that elements are rendered in the correct order:
+     * <ol>
+     *   <li>Background elements like use case subjects</li>
+     *   <li>Use cases contained within subjects</li>
+     *   <li>Other standalone use cases, actors, and association lines</li>
+     * </ol>
+     * If a line is selected, it highlights the line for better visibility.</p>
+     *
+     * @param gc the {@link GraphicsContext} used to draw elements on the canvas
+     */
     private void redrawCanvas(GraphicsContext gc) {
         // Clear the canvas and redraw the grid
         gc.clearRect(0, 0, canvasContainer.getWidth(), canvasContainer.getHeight());
@@ -1359,6 +1782,12 @@ public class UseCaseController {
         }
     }
 
+    /**
+     * Checks whether a specific use case is contained within any use case subject.
+     *
+     * @param useCase the {@link UseCase} to check
+     * @return {@code true} if the use case is inside a subject, {@code false} otherwise
+     */
     private boolean isUseCaseInSubject(UseCase useCase) {
         for (UseCaseSubject subject : subjects) {
             if (subject.containedUseCases.contains(useCase)) {
@@ -1368,6 +1797,22 @@ public class UseCaseController {
         return false;
     }
 
+    /**
+     * Draws an association line on the canvas between two points, with specific styles
+     * for different line types (e.g., solid, dotted) and optional labels like <<include>> or <<extend>>.
+     *
+     * <p>The method supports the following types:
+     * <ul>
+     *   <li><strong>Association:</strong> Solid line</li>
+     *   <li><strong>Include:</strong> Dotted line with a <<include>> label and an arrow</li>
+     *   <li><strong>Extend:</strong> Dotted line with a <<extend>> label and an arrow</li>
+     * </ul>
+     * Labels are positioned at the midpoint of the line.</p>
+     *
+     * @param gc the {@link GraphicsContext} used to draw the line
+     * @param line the {@link LineConnection} object containing the line's start and end points,
+     * type, and associated elements
+     */
     private void drawAssociationLine(GraphicsContext gc, LineConnection line) {
         double[] start = line.getStartPoint();
         double[] end = line.getEndPoint();
@@ -1411,6 +1856,15 @@ public class UseCaseController {
         }
     }
 
+    /**
+     * Highlights the specified actor on the canvas by drawing a light blue background around its head and body,
+     * then redraws the actor on top of the highlight for emphasis.
+     *
+     * <p>This method visually distinguishes the selected or hovered actor for better interaction feedback.</p>
+     *
+     * @param gc    the {@link GraphicsContext} used for drawing on the canvas
+     * @param actor the {@link Actor} to be highlighted
+     */
     private void highlightActor(GraphicsContext gc, Actor actor) {
         double x = actor.getX();
         double y = actor.getY();
@@ -1424,6 +1878,17 @@ public class UseCaseController {
         drawActor(gc, actor);
     }
 
+    /**
+     * Determines whether the mouse pointer is currently over the specified actor's head or body.
+     *
+     * <p>The method checks both the head (a circular area above the body) and the body (a rectangular area)
+     * to provide accurate detection for interaction purposes.</p>
+     *
+     * @param mouseX the x-coordinate of the mouse pointer
+     * @param mouseY the y-coordinate of the mouse pointer
+     * @param actor  the {@link Actor} to check for mouse hover
+     * @return {@code true} if the mouse pointer is over the actor, {@code false} otherwise
+     */
     private boolean isMouseOverActor(double mouseX, double mouseY, Actor actor) {
         double x = actor.getX();
         double y = actor.getY();
@@ -1432,6 +1897,20 @@ public class UseCaseController {
         return (mouseX >= x - 10 && mouseX <= x + 10 && mouseY >= y - 40 && mouseY <= y) || // Head
                 (mouseX >= x - 10 && mouseX <= x + 10 && mouseY >= y && mouseY <= y + 20);  // Body
     }
+
+    /**
+     * Deselects the currently active tool button, resets its style, and clears any drawing or selection state.
+     *
+     * <p>This method ensures:
+     * <ul>
+     *   <li>Removal of the "tool-button-selected" class from the active button</li>
+     *   <li>Reapplication of the default "tool-button" style if necessary</li>
+     *   <li>Resetting of all line-drawing states and de-selection of any active elements on the canvas</li>
+     * </ul>
+     * </p>
+     *
+     * @see #deselectActiveElement(GraphicsContext)
+     */
     private void deselectActiveButton() {
         if (activeButton != null) {
             // Remove the "tool-button-selected" class and reset it to "tool-button"
@@ -1451,6 +1930,16 @@ public class UseCaseController {
         deselectActiveElement(((Canvas) canvasContainer.getChildren().get(0)).getGraphicsContext2D());
     }
 
+    /**
+     * Handles the click event for the Actor button, toggling its active state.
+     *
+     * <p>If the Actor button is already active, it is deactivated and the canvas is cleared of any active elements.
+     * If it is not active, it becomes the active button, and its style is updated accordingly.</p>
+     *
+     * @param gc the {@link GraphicsContext} used for updating the canvas
+     * @see #deselectActiveButton()
+     * @see #activateButton(Button)
+     */
     private void handleActorButtonClick(GraphicsContext gc) {
         if (activeButton == actorButton) {
             // Deactivate the actor button if already active
@@ -1462,7 +1951,14 @@ public class UseCaseController {
         }
     }
 
-    // Activate a button (change style and set active)
+    /**
+     * Activates the specified button by resetting styles for all buttons and applying the "tool-button-selected" style to it.
+     *
+     * <p>This method ensures that only one button is visually highlighted and marked as active at a time.</p>
+     *
+     * @param button the {@link Button} to be activated
+     * @see #resetAllButtonStyles()
+     */
     private void activateButton(Button button) {
         // Reset styles for all buttons
         resetAllButtonStyles();
@@ -1472,8 +1968,12 @@ public class UseCaseController {
         button.getStyleClass().add("tool-button-selected");
     }
 
-
-
+    /**
+     * Resets the styles of all tool buttons to their default state.
+     *
+     * <p>This method removes the "tool-button-selected" class and ensures that the default "tool-button" or
+     * "action-button" style is applied to each button. It ensures consistent UI appearance before activating a new button.</p>
+     */
     private void resetAllButtonStyles() {
         actorButton.getStyleClass().removeAll("tool-button-selected", "tool-button");
         actorButton.getStyleClass().add("tool-button");
@@ -1492,8 +1992,15 @@ public class UseCaseController {
         extendButton.getStyleClass().add("action-button");
     }
 
-
-
+    /**
+     * Handles the click event for the Association button, toggling its active state.
+     *
+     * <p>If the Association button is already active, it is deactivated by deselecting it. Otherwise, it is activated
+     * and its style is updated to indicate selection.</p>
+     *
+     * @see #deselectActiveButton()
+     * @see #activateButton(Button)
+     */
     private void handleAssociationButtonClick() {
         if (activeButton == associationButton) {
             deselectActiveButton();
@@ -1503,9 +2010,13 @@ public class UseCaseController {
         }
     }
 
-    // Handle the start of an association line
-
-    // Handle dragging to preview the association line
+    /**
+     * Displays an error message in a modal alert dialog.
+     *
+     * <p>The dialog contains the specified error message, an "OK" button, and is of type {@code AlertType.ERROR}.</p>
+     *
+     * @param message the error message to display
+     */
     private void showError(String message) {
         javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR);
         alert.setTitle("Error");
@@ -1514,12 +2025,32 @@ public class UseCaseController {
         alert.showAndWait();
     }
 
+    /**
+     * Creates a new Actor at the specified coordinates and draws it on the canvas.
+     *
+     * <p>The actor is added to the list of actors, and its graphical representation is rendered on the canvas.</p>
+     *
+     * @param gc the {@link GraphicsContext} used for drawing
+     * @param x  the x-coordinate of the actor's position
+     * @param y  the y-coordinate of the actor's position
+     * @see #drawActor(GraphicsContext, Actor)
+     */
+
     private void createActor(GraphicsContext gc, double x, double y) {
         Actor actor = new Actor(x, y); // Create a new Actor object
         actors.add(actor); // Add to the list of actors
         drawActor(gc, actor); // Draw the actor on the canvas
     }
 
+    /**
+     * Draws a stick-figure representation of an actor and its connection points on the canvas.
+     *
+     * <p>This method renders the actor's head, body, arms, legs, and connection points. It also draws the actor's
+     * name as a label below the figure, centered horizontally.</p>
+     *
+     * @param gc    the {@link GraphicsContext} used for drawing
+     * @param actor the {@link Actor} object to draw
+     */
     private void drawActor(GraphicsContext gc, Actor actor) {
         double x = actor.getX();
         double y = actor.getY();
@@ -1550,31 +2081,70 @@ public class UseCaseController {
         // Position the text centered horizontally relative to the actor figure
         gc.fillText(actor.getName(), x - textWidth / 2, y + 40); // 40px below the actor's head
     }
-    // Actor class for serialization and connection points
-    private static class Actor implements Serializable {
-        private double x, y;
-        private String name;
-        private static int count = 0; // Counter for unique actor names
 
+
+    /**
+     * Represents an actor in a UML use-case diagram with coordinates, a name, and connection points.
+     */
+    private static class Actor implements Serializable {
+
+        /** X-coordinate of the actor's position. */
+        private double x;
+
+        /** Y-coordinate of the actor's position. */
+        private double y;
+
+        /** Name of the actor, generated uniquely. */
+        private String name;
+
+        /** Counter for generating unique actor names. */
+        private static int count = 0;
+
+        /**
+         * Constructs an Actor at a specified position.
+         *
+         * @param x the X-coordinate of the actor's position
+         * @param y the Y-coordinate of the actor's position
+         */
         public Actor(double x, double y) {
             this.x = x;
             this.y = y;
             this.name = "Actor" + (++count); // Generate unique actor name
         }
 
+        /**
+         * Returns the X-coordinate of the actor's position.
+         *
+         * @return the X-coordinate
+         */
         public double getX() {
             return x;
         }
 
+        /**
+         * Returns the Y-coordinate of the actor's position.
+         *
+         * @return the Y-coordinate
+         */
         public double getY() {
             return y;
         }
 
+        /**
+         * Returns the name of the actor.
+         *
+         * @return the actor's name
+         */
         public String getName() {
             return name;
         }
 
-        // Define connection points (e.g., top, bottom, left, right)
+        /**
+         * Returns the connection points for the actor's position.
+         * Connection points include top, bottom, left, and right.
+         *
+         * @return a 2D array of connection points, where each entry represents a point as [x, y]
+         */
         public double[][] getConnectionPoints() {
             return new double[][]{
                     {x, y - 40}, // Top
@@ -1584,45 +2154,99 @@ public class UseCaseController {
             };
         }
     }
+
+    /**
+     * Represents a use case in a UML use-case diagram with coordinates, dimensions, and a name.
+     * Provides functionality to adjust dimensions based on text size and to retrieve connection points.
+     */
     private static class UseCase implements Serializable {
-        private double x, y;
-        private double width = 120; // Default width
-        private double height = 60; // Default height
+        /** X-coordinate of the use case's position. */
+        private double x;
+        /** Y-coordinate of the use case's position. */
+        private double y;
+        /** Width of the use case. Default is 120. */
+        private double width = 120;
+        /** Height of the use case. Default is 60. */
+        private double height = 60;
+        /** Name of the use case, generated uniquely by default. */
         private String name;
+        /** Counter for generating unique use case names. */
         private static int count = 0;
 
+        /**
+         * Constructs a UseCase at a specified position with default dimensions.
+         *
+         * @param x the X-coordinate of the use case's position
+         * @param y the Y-coordinate of the use case's position
+         */
         public UseCase(double x, double y) {
             this.x = x;
             this.y = y;
             this.name = "UseCase" + (++count);
         }
 
+        /**
+         * Returns the X-coordinate of the use case's position.
+         *
+         * @return the X-coordinate
+         */
         public double getX() {
             return x;
         }
 
+        /**
+         * Returns the Y-coordinate of the use case's position.
+         *
+         * @return the Y-coordinate
+         */
         public double getY() {
             return y;
         }
 
+        /**
+         * Returns the width of the use case.
+         *
+         * @return the width
+         */
         public double getWidth() {
             return width;
         }
 
+        /**
+         * Returns the height of the use case.
+         *
+         * @return the height
+         */
         public double getHeight() {
             return height;
         }
 
+        /**
+         * Returns the name of the use case.
+         *
+         * @return the name
+         */
         public String getName() {
             return name;
         }
 
+        /**
+         * Sets a new name for the use case and adjusts its size based on the new text dimensions.
+         *
+         * @param name the new name of the use case
+         * @param gc   the graphics context used to calculate text dimensions
+         */
         public void setName(String name, GraphicsContext gc) {
             this.name = name;
             adjustSize(gc);
         }
 
-        // Adjust the size based on the text dimensions
+        /**
+         * Adjusts the dimensions of the use case based on the current name's text size.
+         * Ensures a minimum width of 120 and height of 60.
+         *
+         * @param gc the graphics context used to calculate text dimensions
+         */
         public void adjustSize(GraphicsContext gc) {
             gc.setFont(Font.font("Arial", 12));
             javafx.scene.text.Text textHelper = new javafx.scene.text.Text(name);
@@ -1635,6 +2259,12 @@ public class UseCaseController {
             this.height = Math.max(60, textHeight + 20); // Minimum height 60
         }
 
+        /**
+         * Returns the connection points for the use case's dimensions.
+         * Connection points include top, bottom, left, and right.
+         *
+         * @return a 2D array of connection points, where each entry represents a point as [x, y]
+         */
         public double[][] getConnectionPoints() {
             return new double[][]{
                     {x, y - height / 2}, // Top
@@ -1645,14 +2275,36 @@ public class UseCaseController {
         }
     }
 
-    // LineConnection class to store associations
+    /**
+     * Represents a connection line between two elements (Actor or UseCase) in a UML diagram.
+     * Supports different connection types such as "association" and "include."
+     */
     private static class LineConnection implements Serializable {
-        private Object startElement; // Actor or UseCase
-        private Object endElement;   // Actor or UseCase
-        private int startConnectionIndex;
-        private int endConnectionIndex;
-        private String type; // "association" or "include"
 
+        /** The starting element of the connection, either an Actor or a UseCase. */
+        private Object startElement;
+
+        /** The ending element of the connection, either an Actor or a UseCase. */
+        private Object endElement;
+
+        /** Index of the connection point on the starting element. */
+        private int startConnectionIndex;
+
+        /** Index of the connection point on the ending element. */
+        private int endConnectionIndex;
+
+        /** The type of connection, e.g., "association" or "include." */
+        private String type;
+
+        /**
+         * Constructs a LineConnection between two elements with specified connection points and type.
+         *
+         * @param startElement        the starting element of the connection (Actor or UseCase)
+         * @param startConnectionIndex the index of the connection point on the starting element
+         * @param endElement          the ending element of the connection (Actor or UseCase)
+         * @param endConnectionIndex   the index of the connection point on the ending element
+         * @param type                the type of connection (e.g., "association" or "include")
+         */
         public LineConnection(Object startElement, int startConnectionIndex, Object endElement, int endConnectionIndex, String type) {
             this.startElement = startElement;
             this.startConnectionIndex = startConnectionIndex;
@@ -1661,6 +2313,11 @@ public class UseCaseController {
             this.type = type; // Type of the connection (e.g., "association", "include")
         }
 
+        /**
+         * Returns the starting point of the connection based on the starting element and connection index.
+         *
+         * @return an array representing the [x, y] coordinates of the starting point
+         */
         public double[] getStartPoint() {
             if (startElement instanceof Actor) {
                 return ((Actor) startElement).getConnectionPoints()[startConnectionIndex];
@@ -1670,6 +2327,11 @@ public class UseCaseController {
             return new double[]{0, 0};
         }
 
+        /**
+         * Returns the ending point of the connection based on the ending element and connection index.
+         *
+         * @return an array representing the [x, y] coordinates of the ending point
+         */
         public double[] getEndPoint() {
             if (endElement instanceof Actor) {
                 return ((Actor) endElement).getConnectionPoints()[endConnectionIndex];
@@ -1679,18 +2341,49 @@ public class UseCaseController {
             return new double[]{0, 0};
         }
 
+        /**
+         * Returns the type of the connection.
+         *
+         * @return the connection type, e.g., "association" or "include"
+         */
         public String getType() {
             return type;
         }
     }
 
+    /**
+     * Represents a subject in a UML use-case diagram that contains multiple use cases.
+     * Defines boundaries, position, and functionality to manage contained use cases.
+     */
     private static class UseCaseSubject implements Serializable {
-        private double x, y; // Top-left corner
-        private double width, height;
-        private static int count = 0; // Counter for unique subject names
-        private String name;
-        private List<UseCase> containedUseCases = new ArrayList<>(); // Use cases inside the subject
 
+        /** X-coordinate of the top-left corner of the subject. */
+        private double x;
+
+        /** Y-coordinate of the top-left corner of the subject. */
+        private double y;
+
+        /** Width of the subject. Default is 200. */
+        private double width;
+
+        /** Height of the subject. Default is 150. */
+        private double height;
+
+        /** Counter for generating unique subject names. */
+        private static int count = 0;
+
+        /** Name of the subject, generated uniquely by default. */
+        private String name;
+
+        /** List of use cases contained within the subject. */
+        private List<UseCase> containedUseCases = new ArrayList<>();
+
+        /**
+         * Constructs a UseCaseSubject at a specified position with default size.
+         *
+         * @param x the X-coordinate of the top-left corner of the subject
+         * @param y the Y-coordinate of the top-left corner of the subject
+         */
         public UseCaseSubject(double x, double y) {
             this.x = x;
             this.y = y;
@@ -1699,22 +2392,48 @@ public class UseCaseController {
             this.name = "Subject" + (++count);
         }
 
+        /**
+         * Checks if the mouse is over the subject's area.
+         *
+         * @param mouseX the X-coordinate of the mouse
+         * @param mouseY the Y-coordinate of the mouse
+         * @return true if the mouse is over the subject's area, false otherwise
+         */
         public boolean isMouseOver(double mouseX, double mouseY) {
             return mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height;
         }
 
+        /**
+         * Checks if the mouse is over the border of the subject for resizing purposes.
+         *
+         * @param mouseX the X-coordinate of the mouse
+         * @param mouseY the Y-coordinate of the mouse
+         * @return true if the mouse is over the border, false otherwise
+         */
         public boolean isMouseOverBorder(double mouseX, double mouseY) {
             double tolerance = 10.0; // Border thickness for resizing
             return (Math.abs(mouseX - x) < tolerance || Math.abs(mouseX - (x + width)) < tolerance ||
                     Math.abs(mouseY - y) < tolerance || Math.abs(mouseY - (y + height)) < tolerance);
         }
 
+        /**
+         * Adds a use case to the subject's list of contained use cases.
+         *
+         * @param useCase the UseCase to be added
+         */
         public void addUseCase(UseCase useCase) {
             containedUseCases.add(useCase);
         }
+
+        /**
+         * Checks if a point is within the subject's boundaries.
+         *
+         * @param itemX the X-coordinate of the point
+         * @param itemY the Y-coordinate of the point
+         * @return true if the point is within the subject's boundaries, false otherwise
+         */
         public boolean contains(double itemX, double itemY) {
             return itemX >= x && itemX <= x + width && itemY >= y && itemY <= y + height;
         }
     }
-
 }
