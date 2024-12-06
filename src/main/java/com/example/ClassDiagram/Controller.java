@@ -41,33 +41,32 @@ public class Controller {
     private Scale scaleTransform;
 
     @FXML
-    private VBox toolboxVBox;
+    VBox toolboxVBox;
 
-    @FXML
-    Button deleteButton;
+    @FXML   private Button deleteButton;
     @FXML
     Button classButton;
 
     @FXML
-    private Button associationButton;
+    Button associationButton;
     @FXML
-    private Button aggregationButton;
+    Button aggregationButton;
     @FXML
-    private Button compositionButton;
+    Button compositionButton;
     @FXML
-    private Button InheritanceButton;
+    Button InheritanceButton;
     @FXML
-    private ComboBox<String> attributeAccessModifier;
+    ComboBox<String> attributeAccessModifier;
 
     @FXML
-    private ComboBox<String> operationAccessModifier;
+    ComboBox<String> operationAccessModifier;
     @FXML
     private MenuItem jpegMenuItem;
 
     @FXML
     private MenuItem pngMenuItem;
     @FXML
-    private MenuItem GenerateCode;
+    MenuItem GenerateCode;
     @FXML
     private TreeView<String> classHierarchyView; // Hierarchy view for classes
     private TreeItem<String> rootItem;
@@ -91,17 +90,17 @@ public class Controller {
 
 
     @FXML
-    private TextField attributesField;
+    TextField attributesField;
     private Object selectedComponent = null;
 
     @FXML
-    private TextField operationsField;
+    TextField operationsField;
     @FXML
-    private Button addAttributeButton;
+    Button addAttributeButton;
     @FXML
     Button interfaceButton;
     @FXML
-    private Button addOperationButton;
+    Button addOperationButton;
     private Button activeButton;  // To keep track of the active (clicked) button
     private double offsetX, offsetY;  // For storing the mouse offset while dragging
     private String selectedDiagramKey = null;  // To store the key for the selected diagram
@@ -1768,7 +1767,7 @@ public class Controller {
     }
 
 
-    private String generateClassCode(ClassDiagram classDiagram) {
+    String generateClassCode(ClassDiagram classDiagram) {
         StringBuilder code = new StringBuilder();
 
         if (classDiagram instanceof InterfaceDiagram) {
