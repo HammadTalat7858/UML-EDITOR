@@ -43,7 +43,8 @@ public class Controller {
     @FXML
     VBox toolboxVBox;
 
-    @FXML   private Button deleteButton;
+    @FXML
+    Button deleteButton;
     @FXML
     Button classButton;
 
