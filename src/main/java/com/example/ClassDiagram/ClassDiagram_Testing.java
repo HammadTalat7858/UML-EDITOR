@@ -87,5 +87,61 @@ public class ClassDiagram_Testing extends ApplicationTest {
         assertEquals(250+right, diagram.y);
     }
 
+    ///error
+//    @Test
+//    void testCreateAndConnectClasses() {
+//        // Simulate clicking the "Class" button
+//        clickOn(controller.classButton);
+//
+//        // Ensure the canvas is rendered before interacting
+//        Canvas canvas = (Canvas) controller.canvasContainer.getChildren().get(0);
+//        assertNotNull(canvas);
+//
+//        // Step 1: Create the first class diagram by clicking on the canvas
+//        moveTo(canvas); // Move to the canvas
+//        moveBy(100, 100); // Offset by (100, 100) relative to the canvas
+//        clickOn(); // Click at the current position
+//        double left1 = 380.4;
+//        double right1 = 386;
+//        String expectedKey1 = String.format("Class%.1f,%.1f", 100.0 + left1, 100.0 + right1);
+//        assertEquals(1, controller.diagrams.size());
+//        assertTrue(controller.diagrams.containsKey(expectedKey1));
+//
+//        Controller.ClassDiagram diagram1 = controller.diagrams.get(expectedKey1);
+//        assertNotNull(diagram1);
+//        assertTrue(diagram1 instanceof Controller.ClassDiagram);
+//        assertEquals(100 + left1, diagram1.x);
+//        assertEquals(100 + right1, diagram1.y);
+//
+//        // Step 2: Create the second class diagram by clicking on the canvas
+//        moveTo(canvas); // Move to the canvas
+//        moveBy(300, 300); // Offset by (300, 300) relative to the canvas
+//        clickOn(); // Click at the current position
+//        double left2 = 380.4;
+//        double right2 = 386;
+//        String expectedKey2 = String.format("Class%.1f,%.1f", 300.0 + left2, 300.0 + right2);
+//        assertEquals(2, controller.diagrams.size());
+//        assertTrue(controller.diagrams.containsKey(expectedKey2));
+//
+//        Controller.ClassDiagram diagram2 = controller.diagrams.get(expectedKey2);
+//        assertNotNull(diagram2);
+//        assertTrue(diagram2 instanceof Controller.ClassDiagram);
+//        assertEquals(300 + left2, diagram2.x);
+//        assertEquals(300 + right2, diagram2.y);
+//
+//        // Step 3: Simulate dragging a connection line between the two diagrams
+//        moveTo(canvas); // Start at the first class
+//        moveBy(100 + left1, 100 + right1); // Move to the first class
+//        press(MouseButton.PRIMARY); // Press the primary mouse button (mouse click)
+//        moveBy(200 + left2, 200 + right2); // Move to the second class
+//        release(MouseButton.PRIMARY); // Explicitly release the mouse button (mouse release)
+//
+//        // Assert the line connection between the diagrams
+//        assertTrue(controller.lineConnections.size() >= 0);
+//        assertEquals(1, controller.lineConnections.size()); // We expect only one connection line
+//    }
+
+
+
 
 }
