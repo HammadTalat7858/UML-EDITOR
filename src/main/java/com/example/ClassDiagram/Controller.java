@@ -35,87 +35,183 @@ import java.io.*;
 import java.util.*;
 import java.util.List;
 
+/**
+ * Controller class for managing the logic and operations related to the Class Diagram
+ * in the UML Editor.
+ *
+ * <p>This class handles all the logical functionality associated with the Class Diagram,
+ * including the management of UML model components such as classes, interfaces,
+ * and their relationships (e.g., associations, inheritances). It serves
+ * as a bridge between the UI and the business logic layers.</p>
+ *
+ * <p>Responsibilities of this class include:</p>
+ * <ul>
+ *   <li>Creating and updating UML components in the class diagram.</li>
+ *   <li>Validating relationships and constraints, such as inheritance.</li>
+ *   <li>Saving and loading class diagram data as part of a project.</li>
+ *   <li>Supporting code generation based on the class diagram model.</li>
+ * </ul>
+ *
+ * <p>Constraints:</p>
+ * <ul>
+ *   <li>Implements relevant design patterns for maintainability and scalability.</li>
+ *   <li>Handles exceptions related to model integrity and persistence.</li>
+ * </ul>
+ *
+ * @author Hammad Tallat
+ * @author Ahmed Moeez
+ * @author Muhammad Hassnain
+ *
+ */
+
 public class Controller {
 
+    /** Container pane for the canvas where diagrams are drawn. */
     public Pane canvasContainer;
+
+    /** Scale transformation object for zoom functionality. */
     private Scale scaleTransform;
 
+    /** VBox container for the toolbox buttons. */
     @FXML
     VBox toolboxVBox;
 
+    /** Button for deleting selected components. */
     @FXML   private Button deleteButton;
+
+    /** Button to create a new class diagram. */
     @FXML
     Button classButton;
 
+    /** Button to create an association relationship. */
     @FXML
     Button associationButton;
+
+    /** Button to create an aggregation relationship. */
     @FXML
     Button aggregationButton;
+
+    /** Button to create a composition relationship. */
     @FXML
     Button compositionButton;
+
+    /** Button to create an inheritance relationship. */
     @FXML
     Button InheritanceButton;
+
+    /** ComboBox for selecting access modifiers of attributes. */
     @FXML
     ComboBox<String> attributeAccessModifier;
 
+    /** ComboBox for selecting access modifiers of operations. */
     @FXML
     ComboBox<String> operationAccessModifier;
+
+    /** MenuItem for exporting the diagram as a JPEG image. */
     @FXML
     private MenuItem jpegMenuItem;
 
+    /** MenuItem for exporting the diagram as a PNG image. */
     @FXML
     private MenuItem pngMenuItem;
+
+    /** MenuItem for generating code from the UML diagram. */
     @FXML
     MenuItem GenerateCode;
+
+    /** TreeView to display the class hierarchy. */
     @FXML
-    private TreeView<String> classHierarchyView; // Hierarchy view for classes
+    private TreeView<String> classHierarchyView;
+
+    /** Root item of the class hierarchy view. */
     private TreeItem<String> rootItem;
 
+    /** MenuItem for the "Save As" functionality to save the current project. */
     @FXML
     private MenuItem SaveAs;
 
-
+    /** MenuItem for loading a project. */
     @FXML
     private MenuItem Load;
+
+    /** MenuItem for closing the current project or the application. */
     @FXML
     private MenuItem Close;
+
+    /** MenuItem for loading a use-case diagram into the editor. */
     @FXML
     private MenuItem loadusecase;
+
+    /** MenuItem for loading a class diagram into the editor. */
     @FXML
     private MenuItem loadClass;
 
+    /** VBox serving as the properties panel for displaying and modifying attributes of selected components. */
     @FXML
     private VBox propertiesPanel;
 
-
-
+    /** TextField for entering or displaying attributes of the selected UML component. */
     @FXML
     TextField attributesField;
+
+    /** Currently selected component in the editor, used for context-specific actions. */
     private Object selectedComponent = null;
 
+    /** TextField for entering or displaying operations of the selected UML component. */
     @FXML
     TextField operationsField;
+
+    /** Button for adding a new attribute to the selected UML component. */
     @FXML
     Button addAttributeButton;
+
+    /** Button for creating an interface component in the diagram. */
     @FXML
     Button interfaceButton;
+
+    /** Button for adding a new operation to the selected UML component. */
     @FXML
     Button addOperationButton;
-    private Button activeButton;  // To keep track of the active (clicked) button
-    private double offsetX, offsetY;  // For storing the mouse offset while dragging
-    private String selectedDiagramKey = null;  // To store the key for the selected diagram
 
+    /** Keeps track of the currently active button (clicked) in the editor. */
+    private Button activeButton;
+
+    /** For storing the mouse offset while dragging. */
+    private double offsetX, offsetY;
+
+    /** Key for storing the currently selected UML diagram in the project. */
+    private String selectedDiagramKey = null;
+
+    /** Default width for class diagrams in the editor. */
     private final double classDiagramWidth = 120;
 
-    // Map to store class diagrams
+    /** Map for storing UML class diagrams, identified by their unique keys. */
     Map<String, ClassDiagram> diagrams = new HashMap<>();
 
-    // Line drawing state
+    /** Flag indicating whether a line is currently being drawn between components. */
     private boolean isDrawingLine = false;
+
+    /** Starting and Ending coordinates for a line being drawn. */
     private double startX, startY, endX, endY;
+
+    /** Reference to the starting and ending diagram of a line connection. */
     private ClassDiagram startDiagram, endDiagram;
+
+    /** List of all line connections created in the diagram editor. */
     List<LineConnection> lineConnections = new ArrayList<>();
 
+
+    /**
+     * Initializes the controller by setting up the canvas, event listeners, and UI components.
+     * <p>
+     * Tasks include:
+     * <ul>
+     *   <li>Setting up the canvas for UML diagram creation and editing.</li>
+     *   <li>Configuring zoom, resizing, and keyboard shortcuts (e.g., DELETE key).</li>
+     *   <li>Attaching actions for buttons to create and manage UML components.</li>
+     *   <li>Enabling mouse interactions for dragging, editing, and adding components.</li>
+     * </ul>
+     */
     @FXML
     public void initialize() {
         Canvas canvas = new Canvas(910, 780);
@@ -125,14 +221,12 @@ public class Controller {
         rootItem.setExpanded(true);
         classHierarchyView.setRoot(rootItem);
 
-        // Set up zoom functionality
         scaleTransform = new Scale(1, 1, 0, 0);  // Initialize with no scaling
         canvasContainer.getTransforms().add(scaleTransform);
-        // Make canvasContainer focusable and request focus
         canvasContainer.setFocusTraversable(true);
         canvasContainer.requestFocus();
 
-// Request focus when the user clicks on the canvasContainer
+        // Request focus when the user clicks on the canvasContainer
         canvasContainer.setOnMouseClicked(event -> canvasContainer.requestFocus());
 
         // Add event listeners for zooming
@@ -181,10 +275,6 @@ public class Controller {
             }
         });
 
-
-
-
-
         // Draw the grid once
         drawGrid(gc);
 
@@ -214,13 +304,10 @@ public class Controller {
             }
         });
 
-
-
         // Set mouse events for dragging
         canvasContainer.setOnMousePressed(this::onMousePressed);
         canvasContainer.setOnMouseDragged(this::onMouseDragged);
         canvasContainer.setOnMouseReleased(this::onMouseReleased);
-
 
         // Attach handlers for adding attributes and operations
         addAttributeButton.setOnAction(event -> onAddAttribute(gc));
@@ -241,6 +328,11 @@ public class Controller {
 
 
     }
+
+    /**
+     * Handles loading of the use-case diagram by switching scenes.
+     * Prompts the user to confirm if unsaved changes will be lost.
+     */
     @FXML
     private void loadUseCaseDiagram() {
         Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION, "Switch to Use Case Diagram? Unsaved changes will be lost.", ButtonType.YES, ButtonType.NO);
@@ -261,6 +353,11 @@ public class Controller {
             }
         }
     }
+
+    /**
+     * Handles loading of the class diagram by switching scenes.
+     * Prompts the user to confirm if unsaved changes will be lost.
+     */
     @FXML
     private void loadClassDiagram() {
         Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION, "Switch to Class Diagram? Unsaved changes will be lost.", ButtonType.YES, ButtonType.NO);
@@ -281,6 +378,14 @@ public class Controller {
             }
         }
     }
+
+    /**
+     * Updates the class hierarchy view in the TreeView component.
+     * <p>
+     * This method clears the existing hierarchy and repopulates it with the latest UML diagram information.
+     * It includes attributes and operations of each class or interface.
+     * </p>
+     */
     private void updateClassHierarchy() {
         Platform.runLater(() -> {
             rootItem.getChildren().clear(); // Clear the hierarchy
@@ -314,13 +419,26 @@ public class Controller {
         });
     }
 
+    /**
+     * Creates a styled Label with italic text.
+     *
+     * @param text the text to display in the label
+     * @return a Label with italicized text style
+     */
     private Label createItalicLabel(String text) {
         Label label = new Label(text);
         label.setStyle("-fx-font-style: italic; -fx-font-size: 12px;"); // Apply italic style
         return label;
     }
 
-
+    /**
+     * Creates a new Interface Diagram at the specified coordinates.
+     * If a diagram at the location doesn't already exist, it is created, drawn, and added to the hierarchy.
+     *
+     * @param gc the GraphicsContext for drawing the diagram
+     * @param x the x-coordinate for the diagram
+     * @param y the y-coordinate for the diagram
+     */
     private void createInterfaceDiagram(GraphicsContext gc, double x, double y) {
         String key = "Interface" + x + "," + y;
         if (!diagrams.containsKey(key)) {
@@ -329,6 +447,12 @@ public class Controller {
             updateClassHierarchy();
         }
     }
+
+    /**
+     * Updates the UI to reflect the current selection.
+     * Disables or enables the "Add Attribute" button based on the selected component type.
+     * Updates the button's style and tooltip accordingly.
+     */
     @FXML
     private void updateUIForSelection() {
         if (selectedComponent instanceof InterfaceDiagram) {
@@ -355,12 +479,21 @@ public class Controller {
         }
     }
 
-    // Call this method whenever selection changes
+    /**
+     * Handles changes to the selected component, updating the UI and redrawing the canvas.
+     */
     private void handleSelectionChange() {
         updateUIForSelection();
         redrawCanvas(((Canvas) canvasContainer.getChildren().get(0)).getGraphicsContext2D());
     }
 
+    /**
+     * Draws an Interface Diagram at its specified location with a rectangle, labels, and operations.
+     * Highlights the diagram if selected and draws connection points.
+     *
+     * @param gc the GraphicsContext used for drawing
+     * @param interfaceDiagram the InterfaceDiagram to draw
+     */
     private void drawInterfaceDiagram(GraphicsContext gc, InterfaceDiagram interfaceDiagram) {
         double x = interfaceDiagram.x;
         double y = interfaceDiagram.y;
@@ -433,6 +566,14 @@ public class Controller {
             gc.fillOval(point[0] - radius, point[1] - radius, 2 * radius, 2 * radius);
         }
     }
+
+    /**
+     * Calculates the maximum text width for a diagram's labels and operations.
+     *
+     * @param gc the GraphicsContext for measuring text
+     * @param interfaceDiagram the InterfaceDiagram whose text widths are calculated
+     * @return the maximum text width
+     */
     private double getMaxTextWidth(GraphicsContext gc, InterfaceDiagram interfaceDiagram) {
         Text textHelper = new Text();
         textHelper.setFont(Font.font("Arial", 12));
@@ -457,6 +598,11 @@ public class Controller {
 
         return maxWidth;
     }
+
+    /**
+     * Resets the current selection, clearing any highlights or tool states.
+     * Restores the UI to its default state and redraws the canvas.
+     */
     @FXML
     private void resetSelection() {
         // Clear the selected component and diagram key
@@ -483,6 +629,14 @@ public class Controller {
         updateUIForSelection(); // Ensure the UI is fully reset
     }
 
+    /**
+     * Handles zooming on the canvas using the ScrollEvent with the Control key held down.
+     * Adjusts the scaling factors to zoom in or out, constraining the zoom to reasonable limits.
+     * Redraws the canvas with the updated scale and redraws all diagrams.
+     *
+     * @param event the ScrollEvent triggered by the user's scrolling action
+     */
+
     private void handleZoom(ScrollEvent event) {
         if (event.isControlDown()) { // Check if Ctrl is held down
             double zoomFactor = (event.getDeltaY() > 0) ? 1.1 : 0.9;
@@ -507,6 +661,13 @@ public class Controller {
             event.consume();
         }
     }
+
+    /**
+     * Handles the close action for the application.
+     * Displays a confirmation dialog to the user asking if they want to exit the application.
+     * If the user clicks "OK", the application is terminated. If the user cancels,
+     * the dialog is simply closed without taking further action.
+     */
     @FXML
     private void handleCloseAction() {
         // Create a confirmation dialog
@@ -526,8 +687,11 @@ public class Controller {
         }
     }
 
-
-
+    /**
+     * Clears the current selection of components and diagrams from the canvas.
+     * Resets the selected component and diagram key, then redraws the canvas
+     * to remove any highlighting or visual indicators of selection.
+     */
     private void clearSelection() {
         selectedComponent = null; // Clear the selected component (class or line)
         selectedDiagramKey = null; // Clear the selected diagram key
@@ -535,7 +699,13 @@ public class Controller {
         redrawCanvas(gc); // Redraw the canvas to remove highlighting
     }
 
-
+    /**
+     * Handles zooming actions using the Control key along with the ADD and SUBTRACT keys.
+     * Zooms in or out on the canvas by adjusting the scaling factors when the user presses
+     * the Control key along with either the ADD (+) or SUBTRACT (-) key.
+     *
+     * @param event the KeyEvent triggered by the user's keyboard input
+     */
     private void handleZoomKeys(KeyEvent event) {
         if (event.isControlDown()) {
             if (event.getCode() == KeyCode.ADD ) {
@@ -550,6 +720,15 @@ public class Controller {
         }
     }
 
+    /**
+     * Handles the logic for clicking on a toolbar button.
+     * If the clicked button is already active, it deselects it.
+     * Otherwise, it deselects all buttons in the provided list and
+     * selects the clicked button, updating its visual state with CSS classes.
+     *
+     * @param clickedButton the button that was clicked
+     * @param buttons a list of all toolbar buttons for deselection
+     */
     private void handleButtonClick(Button clickedButton, List<Button> buttons) {
         if (activeButton == clickedButton) {
             // If the clicked button is already active, deselect it
@@ -566,7 +745,14 @@ public class Controller {
         }
     }
 
-
+    /**
+     * Deselects all buttons in the toolbox.
+     * This method removes the "tool-button-selected" style class from all buttons
+     * in the provided list and ensures the default "tool-button" style class is
+     * applied. It also clears the current active button.
+     *
+     * @param buttons the list of toolbox buttons to deselect
+     */
     private void deselectAllButtons(List<Button> buttons) {
         for (Button button : buttons) {
             // Remove the "tool-button-selected" style class
@@ -580,7 +766,12 @@ public class Controller {
         activeButton = null; // Clear the active button
     }
 
-
+    /**
+     * Draws a grid on the canvas by using the provided GraphicsContext.
+     * The grid lines are spaced every 10 pixels and have a light gray color.
+     *
+     * @param gc the GraphicsContext of the canvas where the grid is drawn
+     */
     private void drawGrid(GraphicsContext gc) {
         double canvasWidth = canvasContainer.getWidth();
         double canvasHeight = canvasContainer.getHeight();
@@ -600,7 +791,15 @@ public class Controller {
         }
     }
 
-
+    /**
+     * Creates and stores a new class diagram at the specified position (x, y).
+     * If a class diagram does not already exist at this position, it creates one,
+     * stores it in the `diagrams` map, draws it on the canvas, and updates the class hierarchy.
+     *
+     * @param gc the GraphicsContext of the canvas for rendering the diagram
+     * @param x the x-coordinate where the class diagram should be placed
+     * @param y the y-coordinate where the class diagram should be placed
+     */
     private void createClassDiagram(GraphicsContext gc, double x, double y) {
         String key = "Class" + x + "," + y;
         if (!diagrams.containsKey(key)) {
@@ -609,6 +808,17 @@ public class Controller {
             updateClassHierarchy();
         }
     }
+
+    /**
+     * Draws a class diagram on the provided {@link GraphicsContext}.
+     *
+     * <p>This method renders the class diagram with a rectangle containing the class name,
+     * attributes, and operations. It also displays connection points for diagram connections.
+     * If the diagram is selected, it is highlighted with a specific border and background.</p>
+     *
+     * @param gc           the {@link GraphicsContext} used for drawing
+     * @param classDiagram the {@link ClassDiagram} to be drawn, containing coordinates, dimensions, and content
+     */
     private void drawClassDiagram(GraphicsContext gc, ClassDiagram classDiagram) {
         double x = classDiagram.x;
         double y = classDiagram.y;
@@ -695,6 +905,16 @@ public class Controller {
         }
     }
 
+    /**
+     * Calculates the maximum text width required for the given class diagram's contents.
+     *
+     * <p>This method iterates through the class name, attributes, and operations to determine
+     * the widest text, ensuring sufficient space for rendering the class diagram.</p>
+     *
+     * @param gc           the {@link GraphicsContext} used for text measurement
+     * @param classDiagram the {@link ClassDiagram} whose text content is analyzed
+     * @return the maximum width of the text in the class diagram
+     */
     private double getMaxTextWidth(GraphicsContext gc, ClassDiagram classDiagram) {
         Text textHelper = new Text();
         textHelper.setFont(Font.font("Arial", 12));
@@ -720,6 +940,16 @@ public class Controller {
         return maxWidth;
     }
 
+    /**
+     * Selects a class diagram based on mouse coordinates.
+     *
+     * <p>This method determines whether the mouse click falls within any class diagram's
+     * bounding box. If a diagram is selected, its key and reference are stored, and the UI
+     * is updated accordingly.</p>
+     *
+     * @param mouseX the X-coordinate of the mouse click
+     * @param mouseY the Y-coordinate of the mouse click
+     */
     private void selectDiagram(double mouseX, double mouseY) {
         // Reset selection
         selectedDiagramKey = null;
@@ -745,6 +975,17 @@ public class Controller {
         updateUIForSelection();
     }
 
+    /**
+     * Checks if a given mouse position corresponds to an empty area on the canvas.
+     *
+     * <p>This method verifies if the mouse coordinates are outside the bounds of all class diagrams
+     * and are not near any line or its control points. It is useful for determining whether
+     * user interactions, such as adding new diagrams, can occur at the specified location.</p>
+     *
+     * @param mouseX the X-coordinate of the mouse position
+     * @param mouseY the Y-coordinate of the mouse position
+     * @return {@code true} if the mouse position is in an empty area, {@code false} otherwise
+     */
     private boolean isEmptyArea(double mouseX, double mouseY) {
         // Check if mouse is near any class diagram
         for (ClassDiagram diagram : diagrams.values()) {
@@ -772,6 +1013,14 @@ public class Controller {
         return true;
     }
 
+    /**
+     * Handles mouse press events on the canvas.
+     *
+     * <p>This method manages interactions based on the mouse click location and type (e.g., single click, double-click).
+     * It handles component selection, control point addition, line drawing, and interaction with specific UI elements.</p>
+     *
+     * @param event the {@link MouseEvent} representing the mouse press action
+     */
     private void onMousePressed(MouseEvent event) {
         GraphicsContext gc = ((Canvas) canvasContainer.getChildren().get(0)).getGraphicsContext2D();
 
@@ -885,6 +1134,12 @@ public class Controller {
 
     }
 
+    /**
+     * Deletes the currently selected component from the canvas.
+     *
+     * <p>This method supports removing class diagrams and line connections. It updates the
+     * data structures to reflect the changes and redraws the canvas to ensure the UI is consistent.</p>
+     */
     @FXML
     private void deleteSelectedComponent() {
         GraphicsContext gc = ((Canvas) canvasContainer.getChildren().get(0)).getGraphicsContext2D();
@@ -914,8 +1169,15 @@ public class Controller {
         redrawCanvas(gc);
     }
 
-
-
+    /**
+     * Handles mouse drag events on the canvas.
+     *
+     * <p>This method enables dragging of class diagrams, line control points, or lines themselves.
+     * If a new line is being drawn, it provides a visual preview. It ensures boundaries are respected
+     * and updates the canvas in real-time.</p>
+     *
+     * @param event the {@link MouseEvent} representing the mouse drag action
+     */
     private void onMouseDragged(MouseEvent event) {
         GraphicsContext gc = ((Canvas) canvasContainer.getChildren().get(0)).getGraphicsContext2D();
 
@@ -970,6 +1232,15 @@ public class Controller {
         }
     }
 
+    /**
+     * Handles mouse click events for editing class diagram components.
+     *
+     * <p>This method identifies which part of a class diagram is clicked (e.g., class name, attributes, or operations)
+     * and opens a text field for editing if a double-click is detected. It supports both Class and Interface diagrams.</p>
+     *
+     * @param event the {@link MouseEvent} representing the mouse click
+     * @param gc the {@link GraphicsContext} for redrawing the canvas
+     */
     private void handleClassEditing(MouseEvent event, GraphicsContext gc) {
         for (Map.Entry<String, ClassDiagram> entry : diagrams.entrySet()) {
             ClassDiagram diagram = entry.getValue();
@@ -1028,7 +1299,16 @@ public class Controller {
         }
     }
 
-
+    /**
+     * Allows editing of a specific attribute in a class diagram.
+     *
+     * <p>A text field is displayed over the selected attribute for editing. Changes are committed when the
+     * user presses Enter or the text field loses focus. The canvas is redrawn to reflect the updated attribute.</p>
+     *
+     * @param classDiagram the {@link ClassDiagram} containing the attribute to edit
+     * @param index the index of the attribute in the list of attributes
+     * @param gc the {@link GraphicsContext} for redrawing the canvas
+     */
     private void editAttribute(ClassDiagram classDiagram, int index, GraphicsContext gc) {
         double startY = classDiagram.y + 30 + index * 20; // Position of the attribute row
         String attribute = classDiagram.attributes.get(index);
@@ -1062,6 +1342,17 @@ public class Controller {
             }
         });
     }
+
+    /**
+     * Allows editing of a specific operation in a class diagram.
+     *
+     * <p>A text field is displayed over the selected operation for editing. Changes are committed when the
+     * user presses Enter or the text field loses focus. The canvas is redrawn to reflect the updated operation.</p>
+     *
+     * @param classDiagram the {@link ClassDiagram} containing the operation to edit
+     * @param index the index of the operation in the list of operations
+     * @param gc the {@link GraphicsContext} for redrawing the canvas
+     */
     private void editOperation(ClassDiagram classDiagram, int index, GraphicsContext gc) {
         double attributeHeight = 20 * classDiagram.attributes.size();
         double startY = classDiagram.y + 30 + attributeHeight + 20 + index * 20; // Position of the operation row
@@ -1096,6 +1387,17 @@ public class Controller {
             }
         });
     }
+
+    /**
+     * Allows editing of a class or interface name in a diagram.
+     *
+     * <p>A text field is displayed over the class or interface name for editing. Changes are committed when the
+     * user presses Enter or the text field loses focus. The canvas is redrawn to reflect the updated name,
+     * and the class hierarchy is updated if applicable.</p>
+     *
+     * @param diagram the {@link ClassDiagram} or {@link InterfaceDiagram} whose name is being edited
+     * @param gc the {@link GraphicsContext} for redrawing the canvas
+     */
     private void editClassName(ClassDiagram diagram, GraphicsContext gc) {
         String currentName;
         double x, y, width;
@@ -1169,6 +1471,13 @@ public class Controller {
         });
     }
 
+    /**
+     * Converts an access modifier into its corresponding UML symbol.
+     *
+     * @param accessModifier the access modifier as a string (e.g., "public", "private")
+     * @return the UML symbol for the access modifier ("+", "-", "#", or "~"),
+     *         or an empty string if the access modifier is unrecognized
+     */
     private String getAccessModifierSymbol(String accessModifier) {
         switch (accessModifier.toLowerCase()) {
             case "public":
@@ -1184,7 +1493,15 @@ public class Controller {
         }
     }
 
-
+    /**
+     * Handles the mouse release event when drawing a line between diagrams.
+     *
+     * <p>This method checks if the mouse release occurred near a valid connection point on
+     * another diagram. If a valid connection is established, a line connection is created
+     * and the canvas is redrawn. Otherwise, an error message is shown.</p>
+     *
+     * @param event the {@link MouseEvent} representing the mouse release action
+     */
     private void onMouseReleased(MouseEvent event) {
         GraphicsContext gc = ((Canvas) canvasContainer.getChildren().get(0)).getGraphicsContext2D();
 
@@ -1230,6 +1547,14 @@ public class Controller {
         }
     }
 
+    /**
+     * Finds the nearest connection point on a diagram based on the given coordinates.
+     *
+     * @param diagram the {@link ClassDiagram} to search for connection points
+     * @param x the x-coordinate of the reference point
+     * @param y the y-coordinate of the reference point
+     * @return the index of the nearest connection point, or -1 if no point is found
+     */
     private int getNearestConnectionIndex(ClassDiagram diagram, double x, double y) {
         double[][] connectionPoints = diagram.getConnectionPoints();
         for (int i = 0; i < connectionPoints.length; i++) {
@@ -1239,6 +1564,18 @@ public class Controller {
         }
         return -1; // Should not happen for a valid start point
     }
+
+    /**
+     * Validates the connection between two diagrams based on the selected line type.
+     *
+     * <p>Disallows certain line types (association, aggregation, composition) between
+     * interface diagrams and other diagrams.</p>
+     *
+     * @param startDiagram the starting {@link ClassDiagram} of the connection
+     * @param endDiagram the ending {@link ClassDiagram} of the connection
+     * @param lineType the {@link Button} representing the selected line type
+     * @return {@code true} if the connection is invalid, {@code false} otherwise
+     */
     private boolean isInvalidLineConnection(ClassDiagram startDiagram, ClassDiagram endDiagram, Button lineType) {
         // Check if either diagram is an interface
         boolean startIsInterface = startDiagram instanceof InterfaceDiagram;
@@ -1254,6 +1591,12 @@ public class Controller {
         return false;
     }
 
+    /**
+     * Loads a saved diagram from a file and restores it to the canvas.
+     *
+     * <p>This method uses object deserialization to retrieve diagrams and line connections,
+     * reinitializes necessary fields, and redraws the canvas.</p>
+     */
     @FXML
     private void loadDiagramFromFile() {
         FileChooser fileChooser = new FileChooser();
@@ -1283,7 +1626,11 @@ public class Controller {
         }
     }
 
-
+    /**
+     * Saves the current diagram and its connections to a file.
+     *
+     * <p>This method serializes the diagram data into a file with a ".diagram" extension.</p>
+     */
     @FXML
     private void saveDiagramToFile() {
         FileChooser fileChooser = new FileChooser();
@@ -1303,6 +1650,12 @@ public class Controller {
             }
         }
     }
+
+    /**
+     * Displays an informational message to the user in a dialog box.
+     *
+     * @param message the message to display
+     */
     private void showInfo(String message) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Information");
@@ -1311,6 +1664,11 @@ public class Controller {
         alert.showAndWait();
     }
 
+    /**
+     * Displays an error message to the user in a dialog box.
+     *
+     * @param message the error message to display
+     */
     private void showError(String message) {
         javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR);
         alert.setTitle("Invalid Connection");
@@ -1319,21 +1677,42 @@ public class Controller {
         alert.showAndWait();
     }
 
+    /**
+     * Redraws all class diagrams on the canvas.
+     *
+     * @param gc the {@link GraphicsContext} used for drawing
+     */
     private void redrawDiagrams(GraphicsContext gc) {
         for (ClassDiagram diagram : diagrams.values()) {
             drawClassDiagram(gc, diagram);
         }
     }
+
+    /**
+     * Exports the canvas content as a JPEG image file.
+     */
     @FXML
     private void exportAsJPEG() {
         saveCanvasToFile("jpeg");
     }
 
+    /**
+     * Exports the canvas content as a PNG image file.
+     */
     @FXML
     private void exportAsPNG() {
         saveCanvasToFile("png");
     }
 
+    /**
+     * Saves the current canvas content as an image file in the specified format.
+     *
+     * <p>This method captures the canvas as a snapshot, converts it to a
+     * {@link BufferedImage}, and saves it to a user-selected file. If the format is JPEG,
+     * it removes the alpha channel to ensure compatibility.</p>
+     *
+     * @param format the file format to save the image in (e.g., "jpeg", "png")
+     */
     private void saveCanvasToFile(String format) {
         Canvas canvas = (Canvas) canvasContainer.getChildren().get(0);
 
@@ -1374,7 +1753,12 @@ public class Controller {
         }
     }
 
-
+    /**
+     * Converts a {@link WritableImage} to a {@link BufferedImage}.
+     *
+     * @param writableImage the {@link WritableImage} to convert
+     * @return the resulting {@link BufferedImage}
+     */
     private BufferedImage convertToBufferedImage(WritableImage writableImage) {
         int width = (int) writableImage.getWidth();
         int height = (int) writableImage.getHeight();
@@ -1391,6 +1775,13 @@ public class Controller {
 
         return bufferedImage;
     }
+
+    /**
+     * Removes the alpha channel from a {@link BufferedImage}, replacing it with a white background.
+     *
+     * @param originalImage the original {@link BufferedImage} with an alpha channel
+     * @return a new {@link BufferedImage} without an alpha channel
+     */
     private BufferedImage removeAlphaChannel(BufferedImage originalImage) {
         BufferedImage rgbImage = new BufferedImage(
                 originalImage.getWidth(),
@@ -1403,7 +1794,15 @@ public class Controller {
         return rgbImage;
     }
 
-
+    /**
+     * Adds a new attribute to the selected class diagram.
+     *
+     * <p>The attribute is prefixed with the selected access modifier symbol
+     * and added to the diagram's attributes list. The canvas is redrawn to reflect
+     * the changes.</p>
+     *
+     * @param gc the {@link GraphicsContext} used to redraw the canvas
+     */
     @FXML
     private void onAddAttribute(GraphicsContext gc) {
         if (selectedDiagramKey != null) {
@@ -1424,8 +1823,15 @@ public class Controller {
         }
     }
 
-
-
+    /**
+     * Adds a new operation to the selected class diagram.
+     *
+     * <p>The operation is prefixed with the selected access modifier symbol
+     * and added to the diagram's operations list. The canvas is redrawn to reflect
+     * the changes.</p>
+     *
+     * @param gc the {@link GraphicsContext} used to redraw the canvas
+     */
     @FXML
     private void onAddOperation(GraphicsContext gc) {
         if (selectedDiagramKey != null) {
@@ -1447,7 +1853,14 @@ public class Controller {
         }
     }
 
-
+    /**
+     * Redraws the entire canvas, including the grid, diagrams, and line connections.
+     *
+     * <p>This method clears the canvas and sequentially redraws the grid,
+     * class diagrams, and dynamic line connections with their respective styles and shapes.</p>
+     *
+     * @param gc the {@link GraphicsContext} used for drawing
+     */
     private void redrawCanvas(GraphicsContext gc) {
         Canvas canvas = (Canvas) canvasContainer.getChildren().get(0);
         gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
@@ -1519,6 +1932,15 @@ public class Controller {
             }
         }
     }
+
+    /**
+     * Calculates the intersection point of the base of a triangle with a given line segment.
+     *
+     * @param end         the endpoint of the line segment as an array [x, y].
+     * @param start       the starting point of the line segment as an array [x, y].
+     * @param triangleSize the size of the triangle base.
+     * @return an array [x, y] representing the intersection point.
+     */
     private double[] calculateTriangleBaseIntersection(double[] end, double[] start, double triangleSize) {
         double angle = Math.atan2(end[1] - start[1], end[0] - start[0]);
         double intersectionX = end[0] - triangleSize * Math.cos(angle);
@@ -1526,6 +1948,14 @@ public class Controller {
         return new double[]{intersectionX, intersectionY};
     }
 
+    /**
+     * Calculates the intersection point of the base of a diamond shape with a given line segment.
+     *
+     * @param end         the endpoint of the line segment as an array [x, y].
+     * @param start       the starting point of the line segment as an array [x, y].
+     * @param diamondSize the size of the diamond base.
+     * @return an array [x, y] representing the intersection point.
+     */
     private double[] calculateDiamondBaseIntersection(double[] end, double[] start, double diamondSize) {
         double angle = Math.atan2(end[1] - start[1], end[0] - start[0]);
         double intersectionX = end[0] - 2 * diamondSize * Math.cos(angle);
@@ -1533,9 +1963,16 @@ public class Controller {
         return new double[]{intersectionX, intersectionY};
     }
 
-
-
-
+    /**
+     * Draws a hollow triangle on the canvas with the given parameters.
+     *
+     * @param gc         the {@code GraphicsContext} used for drawing.
+     * @param endX       the x-coordinate of the triangle's tip.
+     * @param endY       the y-coordinate of the triangle's tip.
+     * @param startX     the x-coordinate of the line's starting point.
+     * @param startY     the y-coordinate of the line's starting point.
+     * @param isSelected whether the triangle is selected, affecting its appearance.
+     */
     private void drawHollowTriangle(GraphicsContext gc, double endX, double endY, double startX, double startY, boolean isSelected) {
         double triangleSize = 15; // Size of the triangle
 
@@ -1558,8 +1995,14 @@ public class Controller {
         gc.strokePolygon(xPoints, yPoints, 3); // Hollow triangle
     }
 
-
-
+    /**
+     * Displays a text field at the midpoint of a line, allowing the user to edit its label.
+     *
+     * @param mouseX  the x-coordinate of the mouse position.
+     * @param mouseY  the y-coordinate of the mouse position.
+     * @param line    the {@code LineConnection} object to edit.
+     * @param gc      the {@code GraphicsContext} used for redrawing.
+     */
     private void showLineTextField(double mouseX, double mouseY, LineConnection line, GraphicsContext gc) {
         // Calculate the midpoint of the line
         double[] start = line.getStartPoint();
@@ -1597,8 +2040,14 @@ public class Controller {
         });
     }
 
-
-
+    /**
+     * Checks if a given point (mouse position) is near any segment of a line.
+     *
+     * @param mouseX the x-coordinate of the mouse position.
+     * @param mouseY the y-coordinate of the mouse position.
+     * @param line   the {@code LineConnection} object to check.
+     * @return {@code true} if the point is near the line; {@code false} otherwise.
+     */
     private boolean isNearLine(double mouseX, double mouseY, LineConnection line) {
         List<double[]> points = new ArrayList<>();
         points.add(line.getStartPoint()); // Add starting point
@@ -1619,6 +2068,17 @@ public class Controller {
         return false; // Not near any segment of the line
     }
 
+    /**
+     * Calculates the shortest distance from a point to a line segment.
+     *
+     * @param px the x-coordinate of the point.
+     * @param py the y-coordinate of the point.
+     * @param x1 the x-coordinate of the starting point of the segment.
+     * @param y1 the y-coordinate of the starting point of the segment.
+     * @param x2 the x-coordinate of the endpoint of the segment.
+     * @param y2 the y-coordinate of the endpoint of the segment.
+     * @return the shortest distance from the point to the segment.
+     */
     private double pointToSegmentDistance(double px, double py, double x1, double y1, double x2, double y2) {
         double lineLengthSquared = Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2);
 
@@ -1639,8 +2099,17 @@ public class Controller {
         return Math.sqrt(Math.pow(px - projX, 2) + Math.pow(py - projY, 2));
     }
 
-
-    // Helper method to draw the diamond
+    /**
+     * Draws a diamond shape at the specified position with optional fill and highlighting.
+     *
+     * @param gc         the {@code GraphicsContext} used for drawing.
+     * @param endX       the x-coordinate of the diamond's tip.
+     * @param endY       the y-coordinate of the diamond's tip.
+     * @param startX     the x-coordinate of the starting point of the line.
+     * @param startY     the y-coordinate of the starting point of the line.
+     * @param isSelected whether the diamond is selected, affecting its appearance.
+     * @param filled     whether the diamond should be filled with color.
+     */
     private void drawDiamond(GraphicsContext gc, double endX, double endY, double startX, double startY, boolean isSelected, boolean filled) {
         double diamondSize = 15; // Size of the diamond
         Color fillColor = isSelected ? Color.web("#5DADE2") : Color.BLACK; // Use the attribute button color for selected lines
@@ -1673,16 +2142,35 @@ public class Controller {
         gc.strokePolygon(xPoints, yPoints, 4);
     }
 
-
+    /**
+     * Determines whether two points are within a specified snapping tolerance.
+     *
+     * @param x1 the x-coordinate of the first point.
+     * @param y1 the y-coordinate of the first point.
+     * @param x2 the x-coordinate of the second point.
+     * @param y2 the y-coordinate of the second point.
+     * @return {@code true} if the two points are within the snap radius; {@code false} otherwise.
+     */
     private boolean isNear(double x1, double y1, double x2, double y2) {
         double tolerance = 10.0; // Snap radius
         return Math.abs(x1 - x2) < tolerance && Math.abs(y1 - y2) < tolerance;
     }
+
+    /**
+     * Initializes the buttons for each {@code LineConnection} in the diagram.
+     */
     private void initializeConnections() {
         for (LineConnection line : lineConnections) {
             line.initializeButton(aggregationButton, compositionButton, associationButton, InheritanceButton);
         }
     }
+
+    /**
+     * Exports the UML diagrams as Java code files to a user-selected directory.
+     *
+     * Opens a directory chooser to select the export location and generates Java code
+     * for each class or interface in the UML diagram, saving them as .java files.
+     */
     @FXML
     private void exportToJavaCode() {
         DirectoryChooser directoryChooser = new DirectoryChooser();
@@ -1710,6 +2198,14 @@ public class Controller {
         }
     }
 
+    /**
+     * Parses an access modifier and declaration from a UML notation.
+     *
+     * For example, "+ name:Type" would return "public Type name".
+     *
+     * @param declaration the UML declaration string.
+     * @return the parsed Java declaration as a string.
+     */
     private String parseAccessModifier(String declaration) {
         String trimmed = declaration.trim();
         String accessModifier = "";
@@ -1733,6 +2229,15 @@ public class Controller {
 
         return accessModifier + " " + trimmed;
     }
+
+    /**
+     * Parses an attribute declaration in UML notation and converts it to Java syntax.
+     *
+     * For example, "+ attributeName:Type" would return "public Type attributeName".
+     *
+     * @param attribute the UML attribute declaration.
+     * @return the parsed Java attribute declaration as a string, or a comment if invalid.
+     */
     private String parseAttribute(String attribute) {
         // Extract the parts of the attribute in the format: accessModifier name:type
         String[] parts = attribute.split(":");
@@ -1750,6 +2255,15 @@ public class Controller {
         return "// Invalid attribute format: " + attribute;
     }
 
+    /**
+     * Parses an operation declaration in UML notation and converts it to a Java method signature.
+     *
+     * For example, "+ anyFunction(String id, String name):boolean" would return
+     * "public boolean anyFunction(String id, String name).
+     *
+     * @param operation the UML operation declaration.
+     * @return the parsed Java method implementation as a string, or a comment if the format is invalid.
+     */
     private String parseOperation(String operation) {
         String[] parts = operation.split(":");
         if (parts.length == 2) {
@@ -1766,7 +2280,22 @@ public class Controller {
         return "// Invalid operation format: " + operation;
     }
 
-
+    /**
+     * Generates Java source code for a given class diagram, including handling interfaces, inheritance,
+     * implemented interfaces, associations, attributes, and operations.
+     *
+     * This method determines if the given {@code ClassDiagram} represents a class or an interface
+     * and generates appropriate code accordingly. It also processes relationships such as
+     * inheritance, associations, and implementations based on the connections defined in the UML diagram.
+     *
+     * <p>For interfaces, it adds the "extends" clause for any parent interfaces and generates method
+     * declarations for operations. For classes, it adds the "extends" clause for inheritance,
+     * the "implements" clause for interfaces, and includes fields for associated classes.
+     * It also generates method implementations, stubbing out methods from implemented interfaces.</p>
+     *
+     * @param classDiagram the {@code ClassDiagram} object representing the UML class or interface.
+     * @return the generated Java source code as a {@code String}.
+     */
     String generateClassCode(ClassDiagram classDiagram) {
         StringBuilder code = new StringBuilder();
 
@@ -1874,7 +2403,15 @@ public class Controller {
         return code.toString();
     }
 
-
+    /**
+     * Parses an operation declaration in UML notation and converts it to a Java interface method signature.
+     *
+     * For example, "+ anyFunction(String id, String name):boolean" would return
+     * "boolean anyFunction(String id, String name);".
+     *
+     * @param operation the UML operation declaration.
+     * @return the parsed Java interface method signature as a string, or a comment if the format is invalid.
+     */
     private String parseInterfaceOperation(String operation) {
         String[] parts = operation.split(":");
         if (parts.length == 2) {
@@ -1890,21 +2427,49 @@ public class Controller {
         return "// Invalid operation format: " + operation;
     }
 
-
+    /**
+     * Represents a class diagram in the UML Editor.
+     * Provides attributes, operations, and methods for managing its graphical representation.
+     */
     static class ClassDiagram implements Serializable {
+
+        /** X and Y coordinates of the class diagram on the canvas. */
         double x, y;
+
+        /** Width of the rectangle representing the class diagram. */
         double width = 120;  // Width of the rectangle
+
+        /** Height of the rectangle representing the class diagram. */
         double height = 50;  // Height of the rectangle
+
+        /** List of attributes in the class. */
         List<String> attributes = new ArrayList<>();
+
+        /** List of operations (methods) in the class. */
         List<String> operations = new ArrayList<>();
+
+        /** Name of the class. */
         String className = "Class"; // Default class name
+
+        /** Serialization version ID for compatibility. */
         private static final long serialVersionUID = 1L;
 
+        /**
+         * Constructs a ClassDiagram with specified coordinates.
+         *
+         * @param x the x-coordinate of the class diagram
+         * @param y the y-coordinate of the class diagram
+         */
         ClassDiagram(double x, double y) {
             this.x = x;
             this.y = y;
         }
 
+        /**
+         * Calculates and retrieves connection points for the diagram.
+         *
+         * @return a 2D array of connection point coordinates
+         */
         public double[][] getConnectionPoints() {
             double halfWidth = width / 2;
             double halfHeight = height / 2;
@@ -1926,7 +2491,11 @@ public class Controller {
             };
         }
 
-
+        /**
+         * Draws connection points on the canvas.
+         *
+         * @param gc the GraphicsContext used for drawing
+         */
         public void drawConnectionPoints(GraphicsContext gc) {
             gc.setFill(Color.RED);
             double radius = 5.0;  // Radius of connection points
@@ -1934,23 +2503,63 @@ public class Controller {
                 gc.fillOval(point[0] - radius, point[1] - radius, 2 * radius, 2 * radius);
             }
         }
+
+        /**
+         * Calculates and returns the height of the class diagram based on its attributes and operations.
+         *
+         * @return the calculated height
+         */
         double getHeight() {
             return 50 + 20 * attributes.size() + 20 * operations.size();
         }
 
     }
 
+    /**
+     * Represents a connection (e.g., line) between two class diagrams.
+     * Supports different connection types such as association, inheritance, aggregation, etc.
+     */
     private static class LineConnection implements Serializable {
+
+        /** The starting diagram for the connection. */
         ClassDiagram startDiagram;
+
+        /** The ending diagram for the connection. */
         ClassDiagram endDiagram;
+
+        /** Index of the connection point on the starting diagram. */
         int startConnectionIndex;
+
+        /** Index of the connection point on the ending diagram. */
         int endConnectionIndex;
-        transient Button lineType; // Mark Button as transient
-        String lineTypeText;       // Store the button's text or purpose for reinitialization
+
+        /**
+         * The type of line, represented as a Button (e.g., Aggregation, Composition).
+         * Marked as transient to avoid serialization.
+         */
+        transient Button lineType;
+
+        /** Text representing the type of the line (e.g., "Aggregation"). */
+        String lineTypeText;
+
+        /** Optional label or text associated with the connection. */
         String text;
+
+        /** Intermediate control points for the connection line. */
         List<double[]> controlPoints = new ArrayList<>(); // Intermediate control points
+
+        /** Serialization version ID for compatibility. */
         private static final long serialVersionUID = 1L;
 
+        /**
+         * Constructs a LineConnection between two class diagrams with specified connection points and line type.
+         *
+         * @param startDiagram        the starting diagram
+         * @param startConnectionIndex the index of the connection point on the starting diagram
+         * @param endDiagram          the ending diagram
+         * @param endConnectionIndex  the index of the connection point on the ending diagram
+         * @param lineType            the type of the line as a Button
+         */
         LineConnection(ClassDiagram startDiagram, int startConnectionIndex,
                        ClassDiagram endDiagram, int endConnectionIndex, Button lineType) {
             this.startDiagram = startDiagram;
@@ -1962,14 +2571,29 @@ public class Controller {
             this.text = "";
         }
 
+        /**
+         * Retrieves the start point of the connection.
+         *
+         * @return the coordinates of the start point
+         */
         public double[] getStartPoint() {
             return startDiagram.getConnectionPoints()[startConnectionIndex];
         }
 
+        /**
+         * Retrieves the end point of the connection.
+         *
+         * @return the coordinates of the end point
+         */
         public double[] getEndPoint() {
             return endDiagram.getConnectionPoints()[endConnectionIndex];
         }
 
+        /**
+         * Retrieves all points in the connection, including start, control, and end points.
+         *
+         * @return a list of all connection points
+         */
         public List<double[]> getAllPoints() {
             // Combine start, control points, and end points for rendering
             List<double[]> points = new ArrayList<>();
@@ -1979,6 +2603,14 @@ public class Controller {
             return points;
         }
 
+        /**
+         * Initializes the line type Button based on its text identifier.
+         *
+         * @param aggregationButton the button for Aggregation
+         * @param compositionButton the button for Composition
+         * @param associationButton the button for Association
+         * @param inheritanceButton the button for Inheritance
+         */
         private void initializeButton(Button aggregationButton, Button compositionButton,
                                       Button associationButton, Button inheritanceButton) {
             if (lineType == null && lineTypeText != null) {
@@ -1995,14 +2627,34 @@ public class Controller {
         }
     }
 
+    /**
+     * Represents an interface diagram in the UML Editor.
+     * Extends the ClassDiagram class but omits attributes.
+     */
     static class InterfaceDiagram extends ClassDiagram implements Serializable {
+
+        /** Name of the interface. */
         String interfaceName = "Interface"; // Default interface name
+
+        /** Serialization version ID for compatibility. */
         private static final long serialVersionUID = 1L;
 
+        /**
+         * Constructs an InterfaceDiagram with specified coordinates.
+         *
+         * @param x the x-coordinate of the interface diagram
+         * @param y the y-coordinate of the interface diagram
+         */
         InterfaceDiagram(double x, double y) {
             super(x, y);
         }
 
+        /**
+         * Calculates and returns the height of the interface diagram based on its operations.
+         * Interfaces do not include attributes.
+         *
+         * @return the calculated height
+         */
         @Override
         public double getHeight() {
             return 50 + 20 * operations.size(); // Interfaces don't have attributes
