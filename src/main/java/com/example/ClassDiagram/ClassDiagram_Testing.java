@@ -9,6 +9,7 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Label;
 import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.stage.Stage;
@@ -18,6 +19,11 @@ import org.testfx.framework.junit5.ApplicationTest;
 import org.testfx.api.FxRobot;
 import org.testfx.framework.junit5.ApplicationTest;
 import org.testfx.util.WaitForAsyncUtils;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ClassDiagram_Testing extends ApplicationTest {
@@ -35,6 +41,7 @@ public class ClassDiagram_Testing extends ApplicationTest {
     void setUp() {
         controller.diagrams.clear();
         controller.lineConnections.clear();
+
 
     }
     @Test
@@ -201,7 +208,111 @@ public class ClassDiagram_Testing extends ApplicationTest {
         assertFalse(controller.diagrams.containsKey(expectedKey), "Diagram should be removed from the controller!");
 
     }
+    @Test
+    void testClearSelection() {
+        controller.selectedComponent = controller.diagrams.get("Class1");
+        controller.selectedDiagramKey = "Class1";
 
+        controller.clearSelection();
+
+        assertNull(controller.selectedComponent);
+        assertNull(controller.selectedDiagramKey);
+    }
+
+    @Test
+    void testGetMaxTextWidth() {
+        Controller.ClassDiagram diagram = new Controller.ClassDiagram(100, 100);
+        diagram.className = "TestClass";
+        diagram.attributes.add("public String name");
+        diagram.operations.add("public void testMethod()");
+
+        double maxWidth = controller.getMaxTextWidth(null, diagram);
+
+        // This depends on text rendering, but we can check it's positive
+        assertTrue(maxWidth > 0);
+    }
+
+    @Test
+    void testParseAttribute() {
+        String umlAttribute = "+ name:String";
+        String expected = "public String name";
+        String actual = controller.parseAttribute(umlAttribute);
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void testParseOperation() {
+        String umlOperation = "+ testMethod(String name):void";
+        String expected = " void testMethod(String name) {\n        // TODO: Implement this method\n    }";
+        String actual = controller.parseOperation(umlOperation);
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void testGetAccessModifierSymbol() {
+        assertEquals("+", controller.getAccessModifierSymbol("public"));
+        assertEquals("-", controller.getAccessModifierSymbol("private"));
+        assertEquals("#", controller.getAccessModifierSymbol("protected"));
+        assertEquals("~", controller.getAccessModifierSymbol("package-private"));
+        assertEquals("", controller.getAccessModifierSymbol("unknown"));
+    }
+    @Test
+    public void testAddClassDiagram() {
+        Controller.ClassDiagram newDiagram = new Controller.ClassDiagram(300, 300);
+        controller.diagrams.put("Class3", newDiagram);
+
+        assertTrue(controller.diagrams.containsKey("Class3"), "The new class diagram should be added.");
+        assertEquals(1, controller.diagrams.size(), "There should be three diagrams after adding a new one.");
+    }
+
+    @Test
+    public void testDeleteSelectedComponent() {
+        Controller.ClassDiagram toDelete = controller.diagrams.get("Class1");
+        controller.selectedComponent = toDelete;
+
+        controller.deleteSelectedComponent();
+
+        assertFalse(controller.diagrams.containsValue(toDelete), "Deleted diagram should not exist.");
+        assertNull(controller.selectedComponent, "Selected component should be cleared after deletion.");
+    }
+
+    @Test
+    public void testGenerateClassCodeForClassDiagram() {
+        // Initialize the Controller
+        Controller controller = new Controller();
+
+        // Initialize diagrams map and add a ClassDiagram instance
+        controller.diagrams = new HashMap<>();
+        Controller.ClassDiagram classDiagram = new Controller.ClassDiagram(50, 50);
+        classDiagram.className = "SampleClass";
+        classDiagram.attributes.add("+ name:String");
+        classDiagram.operations.add("+ getName():String");
+        controller.diagrams.put("Class1", classDiagram);
+
+        // Generate the code for the ClassDiagram
+        String generatedCode = controller.generateClassCode(classDiagram);
+
+        // Assertions to validate the generated code
+        assertTrue(generatedCode.contains("class SampleClass"), "The generated code should define a public class.");
+        assertTrue(generatedCode.contains("public String name;"), "The generated code should include the attribute.");
+        assertTrue(generatedCode.contains("  String getName() {\n" +
+                "        // TODO: Implement this method\n" +
+                "    }"), "The generated code should include the operation.");
+    }
+
+    @Test
+    public void testGenerateClassCodeForInterfaceDiagram() {
+        Controller.InterfaceDiagram interfaceDiagram = new Controller.InterfaceDiagram(100, 100);
+        interfaceDiagram.interfaceName = "SampleInterface";
+        interfaceDiagram.operations.add("+ executeTask():void");
+
+        String generatedCode = controller.generateClassCode(interfaceDiagram);
+
+        assertTrue(generatedCode.contains("public interface SampleInterface"), "The generated code should define a public interface.");
+        assertTrue(generatedCode.contains("void executeTask();"), "The generated code should include the method.");
+    }
 
 //    //error
 //    @Test
