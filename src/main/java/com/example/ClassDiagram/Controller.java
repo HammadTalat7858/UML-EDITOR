@@ -1617,7 +1617,7 @@ public class Controller {
                 GraphicsContext gc = ((Canvas) canvasContainer.getChildren().get(0)).getGraphicsContext2D();
                 gc.clearRect(0, 0, canvasContainer.getWidth(), canvasContainer.getHeight());
                 redrawCanvas(gc);
-
+updateClassHierarchy();
                 showInfo("Diagram loaded successfully from " + file.getName());
             } catch (IOException | ClassNotFoundException e) {
                 e.printStackTrace();
@@ -2329,19 +2329,26 @@ public class Controller {
             // Handle class generation
             List<String> inheritance = new ArrayList<>();
             List<String> implementedInterfaces = new ArrayList<>();
-            List<String> associations = new ArrayList<>();
+            List<String> compositions = new ArrayList<>();
+            List<String> aggregations = new ArrayList<>();
 
             for (LineConnection connection : lineConnections) {
-                if (connection.startDiagram == classDiagram) {
-                    if (connection.lineType == InheritanceButton) {
+                if (connection.lineType == InheritanceButton) {
+                    // Handle inheritance
+                    if (connection.startDiagram == classDiagram) {
                         if (connection.endDiagram instanceof InterfaceDiagram) {
                             implementedInterfaces.add(((InterfaceDiagram) connection.endDiagram).interfaceName);
                         } else {
                             inheritance.add(connection.endDiagram.className);
                         }
-                    } else if (connection.lineType == associationButton || connection.lineType == aggregationButton ||
-                            connection.lineType == compositionButton) {
-                        associations.add(connection.endDiagram.className);
+                    }
+                } else if (connection.lineType == compositionButton) {
+                    if (connection.endDiagram == classDiagram) {
+                        compositions.add(connection.startDiagram.className); // Composition pointing to this class
+                    }
+                } else if (connection.lineType == aggregationButton) {
+                    if (connection.endDiagram == classDiagram) {
+                        aggregations.add(connection.startDiagram.className); // Aggregation pointing to this class
                     }
                 }
             }
@@ -2361,10 +2368,16 @@ public class Controller {
 
             code.append(" {\n\n");
 
-            // Association fields
-            for (String associatedClass : associations) {
-                code.append("    private ").append(associatedClass).append(" ").append(Character.toLowerCase(associatedClass.charAt(0)))
-                        .append(associatedClass.substring(1)).append(";\n");
+            // Composition fields (declared without initialization)
+            for (String composedClass : compositions) {
+                code.append("    private ").append(composedClass).append(" ").append(Character.toLowerCase(composedClass.charAt(0)))
+                        .append(composedClass.substring(1)).append(";\n");
+            }
+
+            // Aggregation fields
+            for (String aggregatedClass : aggregations) {
+                code.append("    private ").append(aggregatedClass).append(" ").append(Character.toLowerCase(aggregatedClass.charAt(0)))
+                        .append(aggregatedClass.substring(1)).append(";\n");
             }
 
             // Attributes
@@ -2402,6 +2415,7 @@ public class Controller {
 
         return code.toString();
     }
+
 
     /**
      * Parses an operation declaration in UML notation and converts it to a Java interface method signature.

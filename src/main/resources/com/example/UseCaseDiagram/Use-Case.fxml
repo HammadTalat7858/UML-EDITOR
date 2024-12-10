@@ -57,7 +57,7 @@
                         <Button fx:id="actorButton" text="Actor" styleClass="tool-button" />
                         <Button fx:id="associationButton" text="Association" styleClass="tool-button" />
                         <Button fx:id="useCaseButton" text="Use Case" styleClass="tool-button" />
-                        <Button fx:id="subjectButton" text="Use Case Subject" styleClass="tool-button" />
+                        <Button fx:id="subjectButton" text="System Boundary" styleClass="tool-button" />
                     </VBox>
 
                     <!-- Canvas Pane (Center Content) -->
